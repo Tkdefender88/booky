@@ -1,7 +1,11 @@
 package main
 
-import "github.com/Tkdefender88/booky/cmd"
+import (
+	"context"
+
+	"github.com/Tkdefender88/booky/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	cmd.Execute(context.Background())
 }

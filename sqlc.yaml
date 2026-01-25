@@ -1,0 +1,16 @@
+version: "2"
+servers: []
+sql:
+  - engine: "sqlite"
+    queries: "./internal/repo/queries/"
+    schema: "./internal/repo/migrations/"
+    gen:
+      go:
+        package: "generated"
+        out: "./internal/repo/generated"
+        emit_interface: true
+overrides:
+    go: null
+plugins: []
+rules: []
+options: {}
