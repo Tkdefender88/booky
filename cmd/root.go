@@ -2,13 +2,9 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/Tkdefender88/booky/cmd/add"
-	"github.com/Tkdefender88/booky/internal/bookmarks"
-	"github.com/Tkdefender88/booky/internal/repo"
-	"github.com/Tkdefender88/booky/internal/repo/generated"
 	"github.com/Tkdefender88/booky/internal/tui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/fang"
@@ -28,17 +24,8 @@ var rootCmd = &cobra.Command{
 }
 
 func launchTui(cmd *cobra.Command, args []string) error {
-	ds, err := repo.NewDB()
-	if err != nil {
-		return fmt.Errorf("failed to open db: %w", err)
-	}
-	defer ds.Close()
-
-	querier := generated.New(ds.DB())
-	manager := bookmarks.NewManager(querier)
-
-	model := tui.NewModel(manager)
-	p := tea.NewProgram(model, tea.WithAltScreen())
+	model := tui.NewModel()
+	p := tea.NewProgram(model)
 
 	if _, err := p.Run(); err != nil {
 		return err

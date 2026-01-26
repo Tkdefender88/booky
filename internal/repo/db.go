@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -20,7 +21,20 @@ type Datastore struct {
 
 func (d *Datastore) DB() *sql.DB { return d.db }
 
+type NullLogger struct{}
+
+func (l *NullLogger) Fatalf(format string, v ...any) {
+	log.Fatalf(format, v...)
+}
+
+func (l *NullLogger) Printf(
+	format string,
+	v ...any,
+) { // no op -- I don't want it logging unless theres an error
+}
+
 func NewDB() (*Datastore, error) {
+	goose.SetLogger(&NullLogger{})
 
 	dbPath, err := getDBPath()
 	if err != nil {

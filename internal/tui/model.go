@@ -9,8 +9,13 @@ import (
 
 type State int
 
+type ErrMsg struct {
+	err error
+}
+
 const (
-	Loading State = iota
+	DBConnecting State = iota
+	LoadingBookmarks
 	Success
 )
 
@@ -19,25 +24,22 @@ type Model struct {
 	spinner spinner.Model
 	manager *bookmarks.BookmarkManager
 
-	state State
+	state    State
+	shutdown func() error
+
+	err error
 }
 
 func (m Model) Init() tea.Cmd {
-	return m.spinner.Tick
+	return tea.Batch(m.spinner.Tick, ConnectDB())
 }
 
-func NewModel(manager *bookmarks.BookmarkManager) Model {
-	items := []list.Item{
-		&item{title: "google", url: "https://google.com", desc: "searching the web"},
-	}
-
-	bookmarkList := list.New(items, list.NewDefaultDelegate(), 0, 0)
+func NewModel() Model {
 	spinner := spinner.New()
+	list := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	return Model{
-		list:    bookmarkList,
 		spinner: spinner,
-		manager: manager,
-
-		state: Loading,
+		state:   DBConnecting,
+		list:    list,
 	}
 }
