@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/Tkdefender88/booky/internal/repo/generated"
 )
@@ -23,10 +24,18 @@ type Bookmark struct {
 	Description string
 }
 
-func (m *BookmarkManager) SaveBookmark(ctx context.Context, title, uri, description string) (Bookmark, error) {
+func (m *BookmarkManager) SaveBookmark(
+	ctx context.Context,
+	title, uri, description string,
+	tags []string,
+) (Bookmark, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return Bookmark{}, fmt.Errorf("failed to parse url: %w", err)
+	}
+
+	if err := m.saveTags(ctx, tags); err != nil {
+		fmt.Fprintf(os.Stderr, "error saving tags: %v\n", err)
 	}
 
 	if err := m.repo.CreateBookmark(ctx, generated.CreateBookmarkParams{

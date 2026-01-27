@@ -1,0 +1,18 @@
+[tools]
+go = "1.25.5"
+
+[tasks.default]
+depends = ["generate", "build"]
+
+[tasks.build]
+run = "go build -o ./bin/booky main.go"
+
+[tasks.clean]
+run = "rm -rf ./bin"
+
+[tasks.migrate]
+run = "goose -dir ./internal/repo/migrations/ sqlite3 ~/.local/share/booky/bookmarks.db up"
+
+[tasks.generate]
+run = "sqlc generate"
+

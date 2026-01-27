@@ -14,3 +14,7 @@ type Bookmark struct {
 	Url         string
 	Description sql.NullString
 }
+
+type Tag struct {
+	TagName string
+}

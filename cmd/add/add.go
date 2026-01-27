@@ -2,6 +2,7 @@ package add
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Tkdefender88/booky/internal/bookmarks"
 	"github.com/Tkdefender88/booky/internal/repo"
@@ -12,7 +13,7 @@ import (
 func init() {
 	Cmd.Flags().StringP("description", "d", "", "description of the bookmark")
 	Cmd.Flags().StringP("name", "n", "", "name of the bookmark")
-	Cmd.Flags().StringArrayP("tags", "t", []string{}, "tags of the bookmark")
+	Cmd.Flags().StringSliceP("tags", "t", []string{}, "tags of the bookmark")
 }
 
 var Cmd = &cobra.Command{
@@ -49,7 +50,13 @@ var Cmd = &cobra.Command{
 		manager := bookmarks.NewManager(querier)
 
 		ctx := cmd.Context()
-		manager.SaveBookmark(ctx, bookmarkTitle, bookmarkURL, bookmarkDescription)
+
+		tags, err := cmd.Flags().GetStringSlice("tags")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error getting tags: %v\n", err)
+		}
+
+		manager.SaveBookmark(ctx, bookmarkTitle, bookmarkURL, bookmarkDescription, tags)
 
 		return nil
 	},
