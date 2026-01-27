@@ -11,8 +11,6 @@ var (
 			Border(lipgloss.NormalBorder(), true).
 			BorderForeground(subtle).
 			Padding(0, 1)
-
-	activeListStyle = listStyle.BorderForeground(active)
 )
 
 func (m Model) View() string {
@@ -26,24 +24,30 @@ func (m Model) View() string {
 	case LoadingBookmarks:
 		return m.spinner.View()
 	case Success:
-		bookmarkList := ""
-		tagList := ""
+		subtle := lipgloss.Color("#383838")
+		active := lipgloss.Color("#ffffff")
+
+		tagListStyle := listStyle.
+			Width(m.tagList.Width()).
+			Height(m.tagList.Height())
+
+		bookmarkListStyle := listStyle.
+			Width(m.bookmarkList.Width()).
+			Height(m.bookmarkList.Height())
+
 		switch m.focus {
 		case bookmarksFocus:
-			tagList = listStyle.Render(m.tagList.View())
-			bookmarkList = activeListStyle.Render(m.bookmarkList.View())
+			tagListStyle = tagListStyle.BorderForeground(subtle)
+			bookmarkListStyle = bookmarkListStyle.BorderForeground(active)
 		case tagsFocus:
-			tagList = activeListStyle.Render(m.tagList.View())
-			bookmarkList = listStyle.Render(m.bookmarkList.View())
-		default:
-			bookmarkList = listStyle.Render(m.bookmarkList.View())
-			tagList = listStyle.Render(m.tagList.View())
+			tagListStyle = tagListStyle.BorderForeground(active)
+			bookmarkListStyle = bookmarkListStyle.BorderForeground(subtle)
 		}
 
 		return lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			tagList,
-			bookmarkList,
+			tagListStyle.Render(m.tagList.View()),
+			bookmarkListStyle.Render(m.bookmarkList.View()),
 		)
 	default:
 		return ""
