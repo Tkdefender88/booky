@@ -19,17 +19,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, FetchBookmarks(msg.manager)
 	case BookmarksMsg:
 		m.state = Success
-		items := []list.Item{}
+		bookmarks := []list.Item{}
 		for _, b := range msg.bookmarks {
-			items = append(items, fromBookmark(b))
+			bookmarks = append(bookmarks, fromBookmark(b))
 		}
-		return m, m.list.SetItems(items)
+		tags := []list.Item{}
+		for _, t := range msg.tags {
+			tags = append(tags, newTag(t))
+		}
+		cmds = append(cmds, m.tagList.SetItems(tags))
+		cmds = append(cmds, m.bookmarkList.SetItems(bookmarks))
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "ctrl+c":
 			return m, tea.Quit
+		case "tab":
+			m.focus = nextFocus(m.focus)
 		}
 	case tea.WindowSizeMsg:
-		m.list.SetSize(msg.Width, int(msg.Height/2))
+		phi := 1.6180
+		tagWidth := int(float64(msg.Width) / (phi + 1))
+		tagWidth = max(tagWidth, 20)
+		bookmarkWidth := msg.Width - tagWidth
+
+		m.bookmarkList.SetSize(bookmarkWidth, msg.Height-2)
+		m.tagList.SetSize(tagWidth, msg.Height-2)
 	case tea.QuitMsg:
 		if m.shutdown != nil {
 			if err := m.shutdown(); err != nil {
@@ -44,7 +58,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, spinCmd)
 
 	var listCmd tea.Cmd
-	m.list, listCmd = m.list.Update(msg)
+	switch m.focus {
+	case bookmarksFocus:
+		m.bookmarkList, listCmd = m.bookmarkList.Update(msg)
+	case tagsFocus:
+		m.tagList, listCmd = m.tagList.Update(msg)
+	}
 	cmds = append(cmds, listCmd)
 
 	return m, tea.Batch(cmds...)

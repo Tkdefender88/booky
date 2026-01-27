@@ -8,10 +8,20 @@ import (
 )
 
 type State int
+type Focus int
+
+func nextFocus(f Focus) Focus {
+	return Focus((f + 1) % 2)
+}
 
 type ErrMsg struct {
 	err error
 }
+
+const (
+	tagsFocus Focus = iota
+	bookmarksFocus
+)
 
 const (
 	DBConnecting State = iota
@@ -20,11 +30,13 @@ const (
 )
 
 type Model struct {
-	list    list.Model
-	spinner spinner.Model
-	manager *bookmarks.BookmarkManager
+	bookmarkList list.Model
+	tagList      list.Model
+	spinner      spinner.Model
+	manager      *bookmarks.BookmarkManager
 
 	state    State
+	focus    Focus
 	shutdown func() error
 
 	err error
@@ -36,10 +48,17 @@ func (m Model) Init() tea.Cmd {
 
 func NewModel() Model {
 	spinner := spinner.New()
-	list := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	bmList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	tagList := list.New([]list.Item{}, tagDelegate{}, 0, 0)
+	tagList.SetShowHelp(false)
+	bmList.SetShowHelp(false)
+
 	return Model{
-		spinner: spinner,
-		state:   DBConnecting,
-		list:    list,
+		spinner:      spinner,
+		bookmarkList: bmList,
+		tagList:      tagList,
+
+		state: DBConnecting,
+		focus: bookmarksFocus,
 	}
 }

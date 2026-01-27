@@ -15,3 +15,7 @@ func (b *BookmarkManager) saveTags(ctx context.Context, tags []string) error {
 	}
 	return err
 }
+
+func (b *BookmarkManager) ListTags(ctx context.Context) ([]string, error) {
+	return b.repo.GetTags(ctx)
+}

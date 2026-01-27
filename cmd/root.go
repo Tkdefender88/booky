@@ -25,7 +25,7 @@ var rootCmd = &cobra.Command{
 
 func launchTui(cmd *cobra.Command, args []string) error {
 	model := tui.NewModel()
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
 		return err

@@ -34,6 +34,7 @@ func ConnectDB() tea.Cmd {
 
 type BookmarksMsg struct {
 	bookmarks []bookmarks.Bookmark
+	tags      []string
 }
 
 func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
@@ -43,6 +44,11 @@ func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
 		if err != nil {
 			return ErrMsg{err: fmt.Errorf("failed to fetch bookmarks: %w", err)}
 		}
-		return BookmarksMsg{bookmarks: bookmarks}
+
+		tags, err := manager.ListTags(ctx)
+		if err != nil {
+			return ErrMsg{err: fmt.Errorf("failed to fetch tags: %w", err)}
+		}
+		return BookmarksMsg{bookmarks: bookmarks, tags: tags}
 	}
 }
