@@ -2,6 +2,10 @@
 
 A terminal-based bookmark manager that's agnostic of which browser you use. Easily organize and access your bookmarks across different browsers without the hassle of constant import/export cycles.
 
+<div align="center">
+  <img src="examples/booky.gif" alt="booky demo">
+</div>
+
 ## What is booky?
 
 booky solves the problem of managing bookmarks when you frequently switch between browsers. Instead of manually exporting and importing bookmarks between Chrome, Firefox, Safari, or any other browser, booky provides:
