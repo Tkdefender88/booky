@@ -3,7 +3,6 @@ package tui
 import "charm.land/lipgloss/v2"
 
 var (
-	//normal = lipgloss.Color("#eeeeee")
 	subtle = lipgloss.Color("#383838")
 	active = lipgloss.Color("#ffffff")
 
@@ -24,9 +23,6 @@ func (m Model) View() string {
 	case LoadingBookmarks:
 		return m.spinner.View()
 	case Success:
-		subtle := lipgloss.Color("#383838")
-		active := lipgloss.Color("#ffffff")
-
 		tagListStyle := listStyle.
 			Width(m.tagList.Width()).
 			Height(m.tagList.Height())
@@ -44,10 +40,17 @@ func (m Model) View() string {
 			bookmarkListStyle = bookmarkListStyle.BorderForeground(subtle)
 		}
 
-		return lipgloss.JoinHorizontal(
+		help := m.help.View(m.keymap)
+		lists := lipgloss.JoinHorizontal(
 			lipgloss.Top,
 			tagListStyle.Render(m.tagList.View()),
 			bookmarkListStyle.Render(m.bookmarkList.View()),
+		)
+
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			lists,
+			help,
 		)
 	default:
 		return ""

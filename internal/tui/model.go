@@ -2,6 +2,7 @@ package tui
 
 import (
 	"github.com/Tkdefender88/booky/internal/bookmarks"
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -33,7 +34,11 @@ type Model struct {
 	bookmarkList list.Model
 	tagList      list.Model
 	spinner      spinner.Model
-	manager      *bookmarks.BookmarkManager
+	help         help.Model
+
+	keymap KeyMap
+
+	manager *bookmarks.BookmarkManager
 
 	state    State
 	focus    Focus
@@ -57,6 +62,9 @@ func NewModel() Model {
 		spinner:      spinner,
 		bookmarkList: bmList,
 		tagList:      tagList,
+		help:         help.New(),
+
+		keymap: BookmarksKeyMap(),
 
 		state: DBConnecting,
 		focus: bookmarksFocus,

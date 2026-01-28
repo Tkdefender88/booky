@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,34 +17,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = LoadingBookmarks
 		m.manager = msg.manager
 		m.shutdown = msg.close
-		return m, FetchBookmarks(msg.manager)
+		cmds = append(cmds, FetchBookmarks(msg.manager))
 	case BookmarksMsg:
-		m.state = Success
-		bookmarks := []list.Item{}
-		for _, b := range msg.bookmarks {
-			bookmarks = append(bookmarks, fromBookmark(b))
-		}
-		tags := []list.Item{}
-		for _, t := range msg.tags {
-			tags = append(tags, newTag(t))
-		}
-		cmds = append(cmds, m.tagList.SetItems(tags))
-		cmds = append(cmds, m.bookmarkList.SetItems(bookmarks))
+		var cmd tea.Cmd
+		m, cmd = updateLists(m, msg)
+		cmds = append(cmds, cmd)
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			return m, tea.Quit
-		case "tab":
-			m.focus = nextFocus(m.focus)
-		}
+		var cmd tea.Cmd
+		m, cmd = handleKey(m, msg)
+		cmds = append(cmds, cmd)
 	case tea.WindowSizeMsg:
-		phi := 1.6180
-		tagWidth := int(float64(msg.Width) / (phi + 1))
-		tagWidth = max(tagWidth, 20)
-		bookmarkWidth := msg.Width - tagWidth
-
-		m.bookmarkList.SetSize(bookmarkWidth, msg.Height-2)
-		m.tagList.SetSize(tagWidth, msg.Height-2)
+		m = updateWindowSize(m, msg)
 	case tea.QuitMsg:
 		if m.shutdown != nil {
 			if err := m.shutdown(); err != nil {
@@ -67,4 +51,54 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, listCmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
+	model.state = Success
+	bookmarks := []list.Item{}
+	for _, b := range msg.bookmarks {
+		bookmarks = append(bookmarks, fromBookmark(b))
+	}
+	tags := []list.Item{}
+	for _, t := range msg.tags {
+		tags = append(tags, newTag(t))
+	}
+	cmds = append(cmds, model.tagList.SetItems(tags))
+	cmds = append(cmds, model.bookmarkList.SetItems(bookmarks))
+
+	return model, tea.Batch(cmds...)
+}
+
+func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch {
+	case key.Matches(msg, model.keymap.Quit):
+		cmds = append(cmds, tea.Quit)
+	case key.Matches(msg, model.keymap.SwitchView):
+		model.focus = nextFocus(model.focus)
+		// Switch keymaps based on new focus
+		if model.focus == bookmarksFocus {
+			model.keymap = BookmarksKeyMap()
+		} else {
+			model.keymap = TagsKeyMap()
+		}
+	case key.Matches(msg, model.keymap.Open):
+		if bookmark, ok := model.bookmarkList.SelectedItem().(bookmark); ok {
+			cmds = append(cmds, openBookmark(bookmark))
+		}
+	}
+	return model, tea.Batch(cmds...)
+}
+
+func updateWindowSize(model Model, msg tea.WindowSizeMsg) Model {
+	phi := 1.6180
+	tagWidth := int(float64(msg.Width) / (phi + 1))
+	tagWidth = max(tagWidth, 30)
+	bookmarkWidth := msg.Width - tagWidth
+	model.help.Width = msg.Width
+	model.bookmarkList.SetSize(bookmarkWidth, msg.Height-4)
+	model.tagList.SetSize(tagWidth, msg.Height-4)
+	return model
 }

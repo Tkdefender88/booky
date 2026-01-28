@@ -52,3 +52,9 @@ func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
 		return BookmarksMsg{bookmarks: bookmarks, tags: tags}
 	}
 }
+
+func openBookmark(b bookmark) tea.Cmd {
+	return func() tea.Msg {
+		return nil
+	}
+}
