@@ -140,3 +140,7 @@ This project was built with [Bubble Tea](https://github.com/charmbracelet/bubble
 ## Contributing
 
 This is a personal project, but feel free to open issues or submit PRs if you have ideas or bug reports.
+
+## License
+
+MIT - Do whatever you want with it! See [LICENSE](LICENSE) for details.
