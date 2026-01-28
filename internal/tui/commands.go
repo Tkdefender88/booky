@@ -3,6 +3,8 @@ package tui
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"runtime"
 
 	"github.com/Tkdefender88/booky/internal/bookmarks"
 	"github.com/Tkdefender88/booky/internal/repo"
@@ -53,8 +55,25 @@ func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
 	}
 }
 
+type OpenBrowserMsg struct {
+	url string
+}
+
 func openBookmark(b bookmark) tea.Cmd {
 	return func() tea.Msg {
+		var cmd *exec.Cmd
+		switch runtime.GOOS {
+		case "linux":
+			cmd = exec.Command("xdg-open", b.Url())
+		case "darwin":
+			cmd = exec.Command("open", b.Url())
+		default:
+			return ErrMsg{err: fmt.Errorf("unsupported platform")}
+		}
+
+		if err := cmd.Start(); err != nil {
+			return ErrMsg{err: fmt.Errorf("failed to open browser: %w", err)}
+		}
 		return nil
 	}
 }
