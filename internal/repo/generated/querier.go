@@ -12,6 +12,7 @@ type Querier interface {
 	CreateBookmark(ctx context.Context, arg CreateBookmarkParams) (int64, error)
 	CreateTag(ctx context.Context, tagName string) error
 	GetBookmarks(ctx context.Context) ([]Bookmark, error)
+	GetBookmarksByTag(ctx context.Context, tag string) ([]Bookmark, error)
 	GetTags(ctx context.Context) ([]string, error)
 	InsertBookmarkTagJunction(ctx context.Context, arg InsertBookmarkTagJunctionParams) error
 }

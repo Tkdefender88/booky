@@ -40,9 +40,10 @@ type Model struct {
 
 	manager *bookmarks.BookmarkManager
 
-	state    State
-	focus    Focus
-	shutdown func() error
+	state       State
+	focus       Focus
+	shutdown    func() error
+	selectedTag string
 
 	err error
 }
@@ -64,9 +65,10 @@ func NewModel() Model {
 		tagList:      tagList,
 		help:         help.New(),
 
-		keymap: BookmarksKeyMap(),
+		keymap: TagsKeyMap(),
 
-		state: DBConnecting,
-		focus: bookmarksFocus,
+		state:       DBConnecting,
+		focus:       tagsFocus,
+		selectedTag: "",
 	}
 }

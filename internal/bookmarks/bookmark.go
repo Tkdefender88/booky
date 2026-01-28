@@ -24,6 +24,29 @@ type Bookmark struct {
 	Description string
 }
 
+func (m *BookmarkManager) ListBookmarksByTag(ctx context.Context, tag string) ([]Bookmark, error) {
+	rows, err := m.repo.GetBookmarksByTag(ctx, tag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch bookmarks: %w", err)
+	}
+
+	var bookmarks []Bookmark
+	for _, row := range rows {
+		u, err := url.Parse(row.Url)
+		if err != nil {
+			continue
+		}
+		bookmarks = append(bookmarks, Bookmark{
+			ID:          row.ID,
+			Title:       row.Title,
+			Url:         u,
+			Description: row.Description.String,
+		})
+	}
+
+	return bookmarks, nil
+}
+
 func (m *BookmarkManager) SaveBookmark(
 	ctx context.Context,
 	title, uri, description string,

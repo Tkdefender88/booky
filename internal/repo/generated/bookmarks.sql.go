@@ -59,6 +59,42 @@ func (q *Queries) GetBookmarks(ctx context.Context) ([]Bookmark, error) {
 	return items, nil
 }
 
+const getBookmarksByTag = `-- name: GetBookmarksByTag :many
+select id, title, url, description 
+from bookmarks b
+inner join bookmarks_tags bt on b.id = bt.bookmark_id
+where bt.tag_name = ?1 
+order by b.id desc
+`
+
+func (q *Queries) GetBookmarksByTag(ctx context.Context, tag string) ([]Bookmark, error) {
+	rows, err := q.db.QueryContext(ctx, getBookmarksByTag, tag)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Bookmark
+	for rows.Next() {
+		var i Bookmark
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Url,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertBookmarkTagJunction = `-- name: InsertBookmarkTagJunction :exec
 insert into bookmarks_tags (bookmark_id, tag_name) values (?1, ?2)
 `

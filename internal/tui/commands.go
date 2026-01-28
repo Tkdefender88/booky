@@ -55,6 +55,19 @@ func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
 	}
 }
 
+func FetchBookmarksByTag(tag string, manager *bookmarks.BookmarkManager) tea.Cmd {
+	return func() tea.Msg {
+		ctx := context.Background()
+
+		bookmarks, err := manager.ListBookmarksByTag(ctx, tag)
+		if err != nil {
+			return ErrMsg{err: fmt.Errorf("failed to fetch bookmarks: %w", err)}
+		}
+
+		return BookmarksMsg{bookmarks: bookmarks, tags: []string{}}
+	}
+}
+
 type OpenBrowserMsg struct {
 	url string
 }

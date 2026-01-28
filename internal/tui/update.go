@@ -47,6 +47,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bookmarkList, listCmd = m.bookmarkList.Update(msg)
 	case tagsFocus:
 		m.tagList, listCmd = m.tagList.Update(msg)
+		if selectedTag, ok := m.tagList.SelectedItem().(tag); ok {
+			if m.selectedTag != selectedTag.Name() {
+				m.selectedTag = selectedTag.Name()
+				cmds = append(cmds, FetchBookmarksByTag(selectedTag.name, m.manager))
+			}
+		}
 	}
 	cmds = append(cmds, listCmd)
 
@@ -57,16 +63,19 @@ func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	model.state = Success
-	bookmarks := []list.Item{}
+	bookmarks := make([]list.Item, 0, len(msg.bookmarks))
 	for _, b := range msg.bookmarks {
 		bookmarks = append(bookmarks, fromBookmark(b))
 	}
-	tags := []list.Item{}
-	for _, t := range msg.tags {
-		tags = append(tags, newTag(t))
-	}
-	cmds = append(cmds, model.tagList.SetItems(tags))
 	cmds = append(cmds, model.bookmarkList.SetItems(bookmarks))
+
+	if len(msg.tags) > 0 {
+		tags := make([]list.Item, 0, len(msg.tags))
+		for _, t := range msg.tags {
+			tags = append(tags, newTag(t))
+		}
+		cmds = append(cmds, model.tagList.SetItems(tags))
+	}
 
 	return model, tea.Batch(cmds...)
 }
@@ -85,6 +94,11 @@ func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
 			model.keymap = TagsKeyMap()
 		}
 	case key.Matches(msg, model.keymap.Open):
+		if model.bookmarkList.FilterState() == list.Filtering ||
+			model.tagList.FilterState() == list.Filtering {
+			return model, nil
+		}
+
 		if bookmark, ok := model.bookmarkList.SelectedItem().(bookmark); ok {
 			cmds = append(cmds, openBookmark(bookmark))
 		}
