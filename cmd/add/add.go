@@ -56,7 +56,10 @@ var Cmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "error getting tags: %v\n", err)
 		}
 
-		manager.SaveBookmark(ctx, bookmarkTitle, bookmarkURL, bookmarkDescription, tags)
+		_, err = manager.SaveBookmark(ctx, bookmarkTitle, bookmarkURL, bookmarkDescription, tags)
+		if err != nil {
+			return fmt.Errorf("problem saving bookmark: %w", err)
+		}
 
 		return nil
 	},

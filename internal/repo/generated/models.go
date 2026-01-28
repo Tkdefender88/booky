@@ -15,6 +15,11 @@ type Bookmark struct {
 	Description sql.NullString
 }
 
+type BookmarksTag struct {
+	TagName    string
+	BookmarkID int64
+}
+
 type Tag struct {
 	TagName string
 }

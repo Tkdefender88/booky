@@ -10,8 +10,8 @@ import (
 	"database/sql"
 )
 
-const createBookmark = `-- name: CreateBookmark :exec
-insert into bookmarks (title, url, description) values (?1, ?2, ?3)
+const createBookmark = `-- name: CreateBookmark :one
+insert into bookmarks (title, url, description) values (?1, ?2, ?3) returning id
 `
 
 type CreateBookmarkParams struct {
@@ -20,31 +20,32 @@ type CreateBookmarkParams struct {
 	Description sql.NullString
 }
 
-func (q *Queries) CreateBookmark(ctx context.Context, arg CreateBookmarkParams) error {
-	_, err := q.db.ExecContext(ctx, createBookmark, arg.Title, arg.Url, arg.Description)
-	return err
+func (q *Queries) CreateBookmark(ctx context.Context, arg CreateBookmarkParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createBookmark, arg.Title, arg.Url, arg.Description)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getBookmarks = `-- name: GetBookmarks :many
-select title, url, description from bookmarks order by id desc
+select id, title, url, description from bookmarks order by id desc
 `
 
-type GetBookmarksRow struct {
-	Title       string
-	Url         string
-	Description sql.NullString
-}
-
-func (q *Queries) GetBookmarks(ctx context.Context) ([]GetBookmarksRow, error) {
+func (q *Queries) GetBookmarks(ctx context.Context) ([]Bookmark, error) {
 	rows, err := q.db.QueryContext(ctx, getBookmarks)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetBookmarksRow
+	var items []Bookmark
 	for rows.Next() {
-		var i GetBookmarksRow
-		if err := rows.Scan(&i.Title, &i.Url, &i.Description); err != nil {
+		var i Bookmark
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Url,
+			&i.Description,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -56,4 +57,18 @@ func (q *Queries) GetBookmarks(ctx context.Context) ([]GetBookmarksRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertBookmarkTagJunction = `-- name: InsertBookmarkTagJunction :exec
+insert into bookmarks_tags (bookmark_id, tag_name) values (?1, ?2)
+`
+
+type InsertBookmarkTagJunctionParams struct {
+	BookmarkID int64
+	Tag        string
+}
+
+func (q *Queries) InsertBookmarkTagJunction(ctx context.Context, arg InsertBookmarkTagJunctionParams) error {
+	_, err := q.db.ExecContext(ctx, insertBookmarkTagJunction, arg.BookmarkID, arg.Tag)
+	return err
 }

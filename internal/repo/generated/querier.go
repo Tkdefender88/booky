@@ -9,10 +9,11 @@ import (
 )
 
 type Querier interface {
-	CreateBookmark(ctx context.Context, arg CreateBookmarkParams) error
+	CreateBookmark(ctx context.Context, arg CreateBookmarkParams) (int64, error)
 	CreateTag(ctx context.Context, tagName string) error
-	GetBookmarks(ctx context.Context) ([]GetBookmarksRow, error)
+	GetBookmarks(ctx context.Context) ([]Bookmark, error)
 	GetTags(ctx context.Context) ([]string, error)
+	InsertBookmarkTagJunction(ctx context.Context, arg InsertBookmarkTagJunctionParams) error
 }
 
 var _ Querier = (*Queries)(nil)

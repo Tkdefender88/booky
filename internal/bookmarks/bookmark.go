@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
-	"os"
 
 	"github.com/Tkdefender88/booky/internal/repo/generated"
 )
@@ -19,6 +18,7 @@ func NewManager(repo generated.Querier) *BookmarkManager {
 }
 
 type Bookmark struct {
+	ID          int64
 	Title       string
 	Url         *url.URL
 	Description string
@@ -34,19 +34,26 @@ func (m *BookmarkManager) SaveBookmark(
 		return Bookmark{}, fmt.Errorf("failed to parse url: %w", err)
 	}
 
-	if err := m.saveTags(ctx, tags); err != nil {
-		fmt.Fprintf(os.Stderr, "error saving tags: %v\n", err)
-	}
-
-	if err := m.repo.CreateBookmark(ctx, generated.CreateBookmarkParams{
+	bookmarkID, err := m.repo.CreateBookmark(ctx, generated.CreateBookmarkParams{
 		Title:       title,
 		Url:         u.String(),
 		Description: sql.NullString{String: description, Valid: true},
-	}); err != nil {
+	})
+	if err != nil {
 		return Bookmark{}, fmt.Errorf("failed to save bookmark %w", err)
 	}
 
+	if err := m.saveTags(ctx, tags, bookmarkID); err != nil {
+		return Bookmark{
+			ID:          bookmarkID,
+			Title:       title,
+			Url:         u,
+			Description: description,
+		}, fmt.Errorf("failed to save tags: %w", err)
+	}
+
 	return Bookmark{
+		ID:          bookmarkID,
 		Title:       title,
 		Url:         u,
 		Description: description,
@@ -66,6 +73,7 @@ func (m *BookmarkManager) ListBookmarks(ctx context.Context) ([]Bookmark, error)
 			return nil, fmt.Errorf("failed to parse url: %w", err)
 		}
 		bookmarks = append(bookmarks, Bookmark{
+			ID:          row.ID,
 			Title:       row.Title,
 			Url:         u,
 			Description: row.Description.String,

@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 create table bookmarks (
-  id int primary key,
+  id integer primary key autoincrement,
   title text not null,
   url text not null,
   description text

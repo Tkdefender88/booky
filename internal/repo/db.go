@@ -36,7 +36,11 @@ func (l *NullLogger) Printf(
 func NewDB() (*Datastore, error) {
 	goose.SetLogger(&NullLogger{})
 
-	dbPath, err := getDBPath()
+	dbPathFunc := func() (string, error) {
+		return "booky.db", nil
+	}
+
+	dbPath, err := dbPathFunc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get database path: %w", err)
 	}
