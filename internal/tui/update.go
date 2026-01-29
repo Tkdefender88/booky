@@ -86,6 +86,9 @@ func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
 	case key.Matches(msg, model.keymap.Quit):
 		cmds = append(cmds, tea.Quit)
 	case key.Matches(msg, model.keymap.SwitchView):
+		if model.focus == tagsFocus && model.tagList.FilterState() == list.Filtering {
+			return model, nil
+		}
 		model.focus = nextFocus(model.focus)
 		// Switch keymaps based on new focus
 		if model.focus == bookmarksFocus {
