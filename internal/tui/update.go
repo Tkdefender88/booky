@@ -3,31 +3,33 @@ package tui
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case AddBookmarkMsg:
+		m.state = TagsList
+		return m, FetchBookmarks(m.manager)
 	case DbConnectMsg:
 		m.state = LoadingBookmarks
 		m.manager = msg.manager
 		m.shutdown = msg.close
-		cmds = append(cmds, FetchBookmarks(msg.manager))
+		return m, FetchBookmarks(msg.manager)
 	case BookmarksMsg:
-		var cmd tea.Cmd
-		m, cmd = updateLists(m, msg)
-		cmds = append(cmds, cmd)
+		return updateLists(m, msg)
 	case tea.KeyMsg:
-		var cmd tea.Cmd
-		m, cmd = handleKey(m, msg)
-		cmds = append(cmds, cmd)
+		return handleKey(m, msg)
 	case tea.WindowSizeMsg:
 		m = updateWindowSize(m, msg)
+		return m, nil
 	case tea.QuitMsg:
 		if m.shutdown != nil {
 			if err := m.shutdown(); err != nil {
@@ -41,28 +43,71 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.spinner, spinCmd = m.spinner.Update(msg)
 	cmds = append(cmds, spinCmd)
 
-	var listCmd tea.Cmd
-	switch m.focus {
-	case bookmarksFocus:
-		m.bookmarkList, listCmd = m.bookmarkList.Update(msg)
-	case tagsFocus:
-		m.tagList, listCmd = m.tagList.Update(msg)
+	var interactionCmd tea.Cmd
+	switch m.state {
+	case AddingBookmark:
+		m, interactionCmd = updateForm(m, msg)
+	case BookmarksList:
+		m.bookmarkList, interactionCmd = m.bookmarkList.Update(msg)
+	case TagsList:
+		m.tagList, interactionCmd = m.tagList.Update(msg)
 		if selectedTag, ok := m.tagList.SelectedItem().(tag); ok {
 			if m.selectedTag != selectedTag.Name() {
 				m.selectedTag = selectedTag.Name()
 				cmds = append(cmds, FetchBookmarksByTag(selectedTag.name, m.manager))
 			}
 		}
+	default:
 	}
-	cmds = append(cmds, listCmd)
+	cmds = append(cmds, interactionCmd)
 
 	return m, tea.Batch(cmds...)
+}
+
+func updateForm(model Model, msg tea.Msg) (Model, tea.Cmd) {
+	var form *huh.Form = nil
+
+	fmodel, cmd := model.addBookmark.Update(msg)
+	if addForm, ok := fmodel.(*huh.Form); ok {
+		form = addForm
+	}
+
+	if form.State == huh.StateCompleted {
+		name := form.GetString(string(Name))
+		url := form.GetString(string(Url))
+		desc := form.GetString(string(Description))
+		tags := parseTags(form.GetString(string(Tags)))
+		model.state = TagsList
+		model.addBookmark = form
+		return model, AddBookmark(model.manager, name, url, desc, tags)
+	}
+
+	if form.State == huh.StateAborted {
+		model.addBookmark = form
+		model.state = TagsList
+		return model, nil
+	}
+
+	return model, cmd
+}
+
+func parseTags(tags string) []string {
+	t := strings.TrimSpace(tags)
+	rawTagList := strings.Split(t, ",")
+	var tagList []string
+	for _, tag := range rawTagList {
+		tag = strings.TrimSpace(tag)
+		if tag != "" {
+			tagList = append(tagList, tag)
+		}
+	}
+	return tagList
 }
 
 func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	model.state = Success
+	model.state = TagsList
 	bookmarks := make([]list.Item, 0, len(msg.bookmarks))
 	for _, b := range msg.bookmarks {
 		bookmarks = append(bookmarks, fromBookmark(b))
@@ -81,19 +126,29 @@ func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
 }
 
 func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
+	if model.state == AddingBookmark {
+		return model, nil
+	}
 	var cmds []tea.Cmd
 	switch {
 	case key.Matches(msg, model.keymap.Quit):
 		cmds = append(cmds, tea.Quit)
+	case key.Matches(msg, model.keymap.AddBookmark):
+		form := createForm()
+		model.addBookmark = form
+		cmds = append(cmds, model.addBookmark.Init())
+		model.state = AddingBookmark
 	case key.Matches(msg, model.keymap.SwitchView):
-		if model.focus == tagsFocus && model.tagList.FilterState() == list.Filtering {
+		if model.state == TagsList && model.tagList.FilterState() == list.Filtering {
 			return model, nil
 		}
-		model.focus = nextFocus(model.focus)
-		// Switch keymaps based on new focus
-		if model.focus == bookmarksFocus {
+		// Switch state and keymaps
+		switch model.state {
+		case TagsList:
+			model.state = BookmarksList
 			model.keymap = BookmarksKeyMap()
-		} else {
+		case BookmarksList:
+			model.state = TagsList
 			model.keymap = TagsKeyMap()
 		}
 	case key.Matches(msg, model.keymap.Open):

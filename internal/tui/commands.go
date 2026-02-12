@@ -90,3 +90,22 @@ func openBookmark(b bookmark) tea.Cmd {
 		return nil
 	}
 }
+
+type AddBookmarkMsg struct{}
+
+func AddBookmark(
+	manager *bookmarks.BookmarkManager,
+	name, url, desc string,
+	tags []string,
+) tea.Cmd {
+	return func() tea.Msg {
+		ctx := context.Background()
+
+		_, err := manager.SaveBookmark(ctx, name, url, desc, tags)
+		if err != nil {
+			return ErrMsg{err: fmt.Errorf("failed to save bookmark: %w", err)}
+		}
+
+		return AddBookmarkMsg{}
+	}
+}

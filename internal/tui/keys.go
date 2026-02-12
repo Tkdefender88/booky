@@ -4,11 +4,12 @@ import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
 	// Navigation
-	SwitchView key.Binding
-	Up         key.Binding
-	Down       key.Binding
-	PageUp     key.Binding
-	PageDown   key.Binding
+	SwitchView  key.Binding
+	Up          key.Binding
+	Down        key.Binding
+	PageUp      key.Binding
+	PageDown    key.Binding
+	AddBookmark key.Binding
 
 	// Filtering
 	Filter key.Binding
@@ -20,6 +21,10 @@ type KeyMap struct {
 
 func CommonKeyBindings() map[string]key.Binding {
 	return map[string]key.Binding{
+		"addBookmark": key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "add new bookmark"),
+		),
 		"switchView": key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp("tab", "switch view"),
@@ -58,24 +63,26 @@ func TagsKeyMap() KeyMap {
 			key.WithKeys("tab", "enter"),
 			key.WithHelp("tab/enter", "switch view"),
 		),
-		Up:       common["up"],
-		Down:     common["down"],
-		PageUp:   common["pageUp"],
-		PageDown: common["pageDown"],
-		Filter:   common["filter"],
-		Quit:     common["quit"],
+		AddBookmark: common["addBookmark"],
+		Up:          common["up"],
+		Down:        common["down"],
+		PageUp:      common["pageUp"],
+		PageDown:    common["pageDown"],
+		Filter:      common["filter"],
+		Quit:        common["quit"],
 	}
 }
 
 func BookmarksKeyMap() KeyMap {
 	common := CommonKeyBindings()
 	return KeyMap{
-		SwitchView: common["switchView"],
-		Up:         common["up"],
-		Down:       common["down"],
-		PageUp:     common["pageUp"],
-		PageDown:   common["pageDown"],
-		Filter:     common["filter"],
+		SwitchView:  common["switchView"],
+		AddBookmark: common["addBookmark"],
+		Up:          common["up"],
+		Down:        common["down"],
+		PageUp:      common["pageUp"],
+		PageDown:    common["pageDown"],
+		Filter:      common["filter"],
 		Open: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "open bookmark"),

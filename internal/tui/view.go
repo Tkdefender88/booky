@@ -18,11 +18,11 @@ func (m Model) View() string {
 	}
 
 	switch m.state {
-	case DBConnecting:
+	case DBConnecting, LoadingBookmarks:
 		return m.spinner.View()
-	case LoadingBookmarks:
-		return m.spinner.View()
-	case Success:
+	case AddingBookmark:
+		return m.addBookmark.View()
+	case TagsList, BookmarksList:
 		tagListStyle := listStyle.
 			Width(m.tagList.Width()).
 			Height(m.tagList.Height())
@@ -31,11 +31,11 @@ func (m Model) View() string {
 			Width(m.bookmarkList.Width()).
 			Height(m.bookmarkList.Height())
 
-		switch m.focus {
-		case bookmarksFocus:
+		if m.state == BookmarksList {
 			tagListStyle = tagListStyle.BorderForeground(subtle)
 			bookmarkListStyle = bookmarkListStyle.BorderForeground(active)
-		case tagsFocus:
+		}
+		if m.state == TagsList {
 			tagListStyle = tagListStyle.BorderForeground(active)
 			bookmarkListStyle = bookmarkListStyle.BorderForeground(subtle)
 		}

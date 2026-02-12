@@ -9,19 +9,25 @@ import (
 	"github.com/Tkdefender88/booky/internal/repo/generated"
 )
 
+type Tag struct {
+	ID   int64
+	Name string
+}
+
 func (b *BookmarkManager) saveTags(ctx context.Context, tags []string, bookmarkID int64) error {
 	var err error
 	tags = append(tags, "all")
 	for _, tag := range tags {
-		if err := b.repo.CreateTag(ctx, strings.ToLower(tag)); err != nil {
-			errors.Join(err, fmt.Errorf("failed to save tag %q: %w", tag, err))
+		tagID, createErr := b.repo.CreateTag(ctx, strings.ToLower(tag))
+		if createErr != nil {
+			err = errors.Join(err, fmt.Errorf("failed to save tag %q: %w", tag, createErr))
 		}
 
-		if err := b.repo.InsertBookmarkTagJunction(ctx, generated.InsertBookmarkTagJunctionParams{
+		if insertErr := b.repo.InsertBookmarkTagJunction(ctx, generated.InsertBookmarkTagJunctionParams{
 			BookmarkID: bookmarkID,
-			Tag:        tag,
-		}); err != nil {
-			errors.Join(err, fmt.Errorf("failed to associate bookmark '%d' with tag %q: %w", bookmarkID, tag, err))
+			TagID:      tagID,
+		}); insertErr != nil {
+			err = errors.Join(err, fmt.Errorf("failed to associate bookmark '%d' with tag %q: %w", bookmarkID, tag, insertErr))
 		}
 	}
 	return err

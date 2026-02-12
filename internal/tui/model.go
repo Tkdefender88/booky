@@ -6,28 +6,30 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 type State int
-type Focus int
-
-func nextFocus(f Focus) Focus {
-	return Focus((f + 1) % 2)
-}
 
 type ErrMsg struct {
 	err error
 }
 
+type FormKey string
+
 const (
-	tagsFocus Focus = iota
-	bookmarksFocus
+	Name        FormKey = "Name"
+	Description FormKey = "Description"
+	Url         FormKey = "Url"
+	Tags        FormKey = "Tags"
 )
 
 const (
 	DBConnecting State = iota
 	LoadingBookmarks
-	Success
+	BookmarksList
+	TagsList
+	AddingBookmark
 )
 
 type Model struct {
@@ -35,13 +37,13 @@ type Model struct {
 	tagList      list.Model
 	spinner      spinner.Model
 	help         help.Model
+	addBookmark  *huh.Form
 
 	keymap KeyMap
 
 	manager *bookmarks.BookmarkManager
 
 	state       State
-	focus       Focus
 	shutdown    func() error
 	selectedTag string
 
@@ -49,7 +51,33 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, ConnectDB())
+	return tea.Batch(
+		m.spinner.Tick,
+		ConnectDB(),
+	)
+}
+
+func createForm() *huh.Form {
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Key(string(Name)).
+				Title("Bookmark Name").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Url)).
+				Title("Url").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Description)).
+				Title("Description").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Tags)).
+				Title("Tags").
+				Prompt("? "),
+		),
+	)
 }
 
 func NewModel() Model {
@@ -64,11 +92,11 @@ func NewModel() Model {
 		bookmarkList: bmList,
 		tagList:      tagList,
 		help:         help.New(),
+		addBookmark:  nil,
 
 		keymap: TagsKeyMap(),
 
 		state:       DBConnecting,
-		focus:       tagsFocus,
 		selectedTag: "",
 	}
 }
