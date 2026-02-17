@@ -1,15 +1,7 @@
 package tui
 
-import "charm.land/lipgloss/v2"
-
-var (
-	subtle = lipgloss.Color("#383838")
-	active = lipgloss.Color("#ffffff")
-
-	listStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder(), true).
-			BorderForeground(subtle).
-			Padding(0, 1)
+import (
+	"charm.land/lipgloss/v2"
 )
 
 func (m Model) View() string {
@@ -23,36 +15,19 @@ func (m Model) View() string {
 	case AddingBookmark:
 		return m.addBookmark.View()
 	case TagsList, BookmarksList:
-		tagListStyle := listStyle.
-			Width(m.tagList.Width()).
-			Height(m.tagList.Height())
-
-		bookmarkListStyle := listStyle.
-			Width(m.bookmarkList.Width()).
-			Height(m.bookmarkList.Height())
-
-		if m.state == BookmarksList {
-			tagListStyle = tagListStyle.BorderForeground(subtle)
-			bookmarkListStyle = bookmarkListStyle.BorderForeground(active)
-		}
-		if m.state == TagsList {
-			tagListStyle = tagListStyle.BorderForeground(active)
-			bookmarkListStyle = bookmarkListStyle.BorderForeground(subtle)
-		}
-
-		help := m.help.View(m.keymap)
 		lists := lipgloss.JoinHorizontal(
 			lipgloss.Top,
-			tagListStyle.Render(m.tagList.View()),
-			bookmarkListStyle.Render(m.bookmarkList.View()),
+			m.tagList.View(),
+			m.bookmarkList.View(),
 		)
 
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			lists,
-			help,
-		)
-	default:
-		return ""
+		// fullView := lipgloss.JoinVertical(
+		// 	lipgloss.Left,
+		// 	lists,
+		// 	"help",
+		// )
+		return lists
 	}
+
+	return ""
 }

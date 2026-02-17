@@ -2,18 +2,15 @@ package tui
 
 import (
 	"github.com/Tkdefender88/booky/internal/bookmarks"
+	bookmarklist "github.com/Tkdefender88/booky/internal/tui/bookmarkList"
+	"github.com/Tkdefender88/booky/internal/tui/taglist"
 	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )
 
 type State int
-
-type ErrMsg struct {
-	err error
-}
 
 type FormKey string
 
@@ -33,19 +30,18 @@ const (
 )
 
 type Model struct {
-	bookmarkList list.Model
-	tagList      list.Model
+	state State
+
+	bookmarkList bookmarklist.Model
+	tagList      taglist.Model
 	spinner      spinner.Model
 	help         help.Model
 	addBookmark  *huh.Form
 
 	keymap KeyMap
 
-	manager *bookmarks.BookmarkManager
-
-	state       State
-	shutdown    func() error
-	selectedTag string
+	manager  *bookmarks.BookmarkManager
+	shutdown func() error
 
 	err error
 }
@@ -54,6 +50,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.spinner.Tick,
 		ConnectDB(),
+		m.addBookmark.Init(),
 	)
 }
 
@@ -82,21 +79,18 @@ func createForm() *huh.Form {
 
 func NewModel() Model {
 	spinner := spinner.New()
-	bmList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	tagList := list.New([]list.Item{}, tagDelegate{}, 0, 0)
-	tagList.SetShowHelp(false)
-	bmList.SetShowHelp(false)
+	bmList := bookmarklist.NewModel()
+	tagList := taglist.NewModel()
 
 	return Model{
 		spinner:      spinner,
 		bookmarkList: bmList,
 		tagList:      tagList,
 		help:         help.New(),
-		addBookmark:  nil,
+		addBookmark:  createForm(),
 
-		keymap: TagsKeyMap(),
+		keymap: Keymap(),
 
-		state:       DBConnecting,
-		selectedTag: "",
+		state: DBConnecting,
 	}
 }

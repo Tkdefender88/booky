@@ -5,31 +5,43 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
-	case AddBookmarkMsg:
-		m.state = TagsList
-		return m, FetchBookmarks(m.manager)
-	case DbConnectMsg:
+	case messages.DbConnectedMsg:
 		m.state = LoadingBookmarks
-		m.manager = msg.manager
-		m.shutdown = msg.close
-		return m, FetchBookmarks(msg.manager)
-	case BookmarksMsg:
-		return updateLists(m, msg)
-	case tea.KeyMsg:
-		return handleKey(m, msg)
+		m.manager = msg.Manager
+		m.shutdown = msg.Close
+		cmds = append(cmds, FetchBookmarks(msg.Manager))
+	case messages.BookmarksFetchedMsg:
+		m.state = TagsList
+	case messages.BookmarkAddedMsg:
+		cmds = append(cmds, FetchBookmarks(m.manager))
+	case messages.ChangeListFocusMsg:
+		switch msg.Target {
+		case messages.BookmarkFocus:
+			m.state = BookmarksList
+		case messages.TagFocus:
+			m.state = TagsList
+		case messages.FormFocus:
+			m.addBookmark = createForm()
+			cmds = append(cmds, m.addBookmark.Init())
+			m.state = AddingBookmark
+		}
+	case messages.FormClosedMsg:
+		if msg.Status == messages.FormClosedSuccess {
+			cmds = append(cmds, AddBookmark(m.manager, msg.Name, msg.Url, msg.Desc, msg.Tags))
+		}
+		m.addBookmark = createForm()
+		cmds = append(cmds, changeToTagsFocus)
 	case tea.WindowSizeMsg:
 		m = updateWindowSize(m, msg)
-		return m, nil
 	case tea.QuitMsg:
 		if m.shutdown != nil {
 			if err := m.shutdown(); err != nil {
@@ -37,29 +49,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		os.Exit(0)
-	}
-
-	var spinCmd tea.Cmd
-	m.spinner, spinCmd = m.spinner.Update(msg)
-	cmds = append(cmds, spinCmd)
-
-	var interactionCmd tea.Cmd
-	switch m.state {
-	case AddingBookmark:
-		m, interactionCmd = updateForm(m, msg)
-	case BookmarksList:
-		m.bookmarkList, interactionCmd = m.bookmarkList.Update(msg)
-	case TagsList:
-		m.tagList, interactionCmd = m.tagList.Update(msg)
-		if selectedTag, ok := m.tagList.SelectedItem().(tag); ok {
-			if m.selectedTag != selectedTag.Name() {
-				m.selectedTag = selectedTag.Name()
-				cmds = append(cmds, FetchBookmarksByTag(selectedTag.name, m.manager))
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, m.keymap.AddBookmark):
+			if m.state != AddingBookmark {
+				cmds = append(cmds, changeToFormFocus)
+			}
+		case key.Matches(msg, m.keymap.Quit):
+			if m.state != AddingBookmark {
+				cmds = append(cmds, tea.Quit)
 			}
 		}
-	default:
 	}
-	cmds = append(cmds, interactionCmd)
+
+	spinner, cmd := m.spinner.Update(msg)
+	m.spinner = spinner
+	cmds = append(cmds, cmd)
+
+	var formCmd tea.Cmd
+	m, formCmd = updateForm(m, msg)
+	cmds = append(cmds, formCmd)
+
+	bookmarks, cmd := m.bookmarkList.Update(msg)
+	m.bookmarkList = bookmarks
+	cmds = append(cmds, cmd)
+
+	tags, cmd := m.tagList.Update(msg)
+	m.tagList = tags
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
@@ -102,66 +119,6 @@ func parseTags(tags string) []string {
 		}
 	}
 	return tagList
-}
-
-func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
-	model.state = TagsList
-	bookmarks := make([]list.Item, 0, len(msg.bookmarks))
-	for _, b := range msg.bookmarks {
-		bookmarks = append(bookmarks, fromBookmark(b))
-	}
-	cmds = append(cmds, model.bookmarkList.SetItems(bookmarks))
-
-	if len(msg.tags) > 0 {
-		tags := make([]list.Item, 0, len(msg.tags))
-		for _, t := range msg.tags {
-			tags = append(tags, newTag(t))
-		}
-		cmds = append(cmds, model.tagList.SetItems(tags))
-	}
-
-	return model, tea.Batch(cmds...)
-}
-
-func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
-	if model.state == AddingBookmark {
-		return model, nil
-	}
-	var cmds []tea.Cmd
-	switch {
-	case key.Matches(msg, model.keymap.Quit):
-		cmds = append(cmds, tea.Quit)
-	case key.Matches(msg, model.keymap.AddBookmark):
-		form := createForm()
-		model.addBookmark = form
-		cmds = append(cmds, model.addBookmark.Init())
-		model.state = AddingBookmark
-	case key.Matches(msg, model.keymap.SwitchView):
-		if model.state == TagsList && model.tagList.FilterState() == list.Filtering {
-			return model, nil
-		}
-		// Switch state and keymaps
-		switch model.state {
-		case TagsList:
-			model.state = BookmarksList
-			model.keymap = BookmarksKeyMap()
-		case BookmarksList:
-			model.state = TagsList
-			model.keymap = TagsKeyMap()
-		}
-	case key.Matches(msg, model.keymap.Open):
-		if model.bookmarkList.FilterState() == list.Filtering ||
-			model.tagList.FilterState() == list.Filtering {
-			return model, nil
-		}
-
-		if bookmark, ok := model.bookmarkList.SelectedItem().(bookmark); ok {
-			cmds = append(cmds, openBookmark(bookmark))
-		}
-	}
-	return model, tea.Batch(cmds...)
 }
 
 func updateWindowSize(model Model, msg tea.WindowSizeMsg) Model {

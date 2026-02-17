@@ -3,40 +3,37 @@ package tui
 import (
 	"context"
 	"fmt"
-	"os/exec"
-	"runtime"
 
 	"github.com/Tkdefender88/booky/internal/bookmarks"
 	"github.com/Tkdefender88/booky/internal/repo"
 	"github.com/Tkdefender88/booky/internal/repo/generated"
+	"github.com/Tkdefender88/booky/internal/tui/messages"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type DbConnectMsg struct {
-	manager *bookmarks.BookmarkManager
-	close   func() error
+func changeToTagsFocus() tea.Msg {
+	return messages.ChangeListFocusMsg{Target: messages.TagFocus}
+}
+
+func changeToFormFocus() tea.Msg {
+	return messages.ChangeListFocusMsg{Target: messages.FormFocus}
 }
 
 func ConnectDB() tea.Cmd {
 	return func() tea.Msg {
 		db, err := repo.NewDB()
 		if err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to open db: %w", err)}
+			return messages.NewErrMsg(fmt.Errorf("failed to open db: %w", err))
 		}
 
 		querier := generated.New(db.DB())
 		manager := bookmarks.NewManager(querier)
 
-		return DbConnectMsg{
-			manager: manager,
-			close:   db.Close,
+		return messages.DbConnectedMsg{
+			Manager: manager,
+			Close:   db.Close,
 		}
 	}
-}
-
-type BookmarksMsg struct {
-	bookmarks []bookmarks.Bookmark
-	tags      []string
 }
 
 func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
@@ -44,54 +41,16 @@ func FetchBookmarks(manager *bookmarks.BookmarkManager) tea.Cmd {
 		ctx := context.Background()
 		bookmarks, err := manager.ListBookmarks(ctx)
 		if err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to fetch bookmarks: %w", err)}
+			return messages.NewErrMsg(fmt.Errorf("failed to fetch bookmarks: %w", err))
 		}
 
 		tags, err := manager.ListTags(ctx)
 		if err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to fetch tags: %w", err)}
+			return messages.NewErrMsg(fmt.Errorf("failed to fetch tags: %w", err))
 		}
-		return BookmarksMsg{bookmarks: bookmarks, tags: tags}
+		return messages.BookmarksFetchedMsg{Bookmarks: bookmarks, Tags: tags}
 	}
 }
-
-func FetchBookmarksByTag(tag string, manager *bookmarks.BookmarkManager) tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-
-		bookmarks, err := manager.ListBookmarksByTag(ctx, tag)
-		if err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to fetch bookmarks: %w", err)}
-		}
-
-		return BookmarksMsg{bookmarks: bookmarks, tags: []string{}}
-	}
-}
-
-type OpenBrowserMsg struct {
-	url string
-}
-
-func openBookmark(b bookmark) tea.Cmd {
-	return func() tea.Msg {
-		var cmd *exec.Cmd
-		switch runtime.GOOS {
-		case "linux":
-			cmd = exec.Command("xdg-open", b.Url())
-		case "darwin":
-			cmd = exec.Command("open", b.Url())
-		default:
-			return ErrMsg{err: fmt.Errorf("unsupported platform")}
-		}
-
-		if err := cmd.Start(); err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to open browser: %w", err)}
-		}
-		return nil
-	}
-}
-
-type AddBookmarkMsg struct{}
 
 func AddBookmark(
 	manager *bookmarks.BookmarkManager,
@@ -103,9 +62,9 @@ func AddBookmark(
 
 		_, err := manager.SaveBookmark(ctx, name, url, desc, tags)
 		if err != nil {
-			return ErrMsg{err: fmt.Errorf("failed to save bookmark: %w", err)}
+			return messages.NewErrMsg(fmt.Errorf("failed to save bookmark: %w", err))
 		}
 
-		return AddBookmarkMsg{}
+		return messages.BookmarkAddedMsg{}
 	}
 }
