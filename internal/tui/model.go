@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"io"
+	"os"
+
 	"github.com/Tkdefender88/booky/internal/bookmarks"
 	bookmarklist "github.com/Tkdefender88/booky/internal/tui/bookmarkList"
 	"github.com/Tkdefender88/booky/internal/tui/taglist"
@@ -30,7 +33,9 @@ const (
 )
 
 type Model struct {
-	state State
+	dump     io.Writer
+	state    State
+	spinning bool
 
 	bookmarkList bookmarklist.Model
 	tagList      taglist.Model
@@ -77,12 +82,21 @@ func createForm() *huh.Form {
 	)
 }
 
-func NewModel() Model {
+func NewModel(debug bool) (Model, error) {
+	var dump *os.File
+	if debug {
+		var err error
+		dump, err = os.OpenFile("DEBUG.dump", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+		if err != nil {
+			return Model{}, err
+		}
+	}
 	spinner := spinner.New()
 	bmList := bookmarklist.NewModel()
 	tagList := taglist.NewModel()
 
 	return Model{
+		dump:         dump,
 		spinner:      spinner,
 		bookmarkList: bmList,
 		tagList:      tagList,
@@ -92,5 +106,5 @@ func NewModel() Model {
 		keymap: Keymap(),
 
 		state: DBConnecting,
-	}
+	}, nil
 }

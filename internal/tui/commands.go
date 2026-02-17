@@ -15,8 +15,16 @@ func changeToTagsFocus() tea.Msg {
 	return messages.ChangeListFocusMsg{Target: messages.TagFocus}
 }
 
-func changeToFormFocus() tea.Msg {
-	return messages.ChangeListFocusMsg{Target: messages.FormFocus}
+func changeToFormFocus() tea.Cmd {
+	return func() tea.Msg {
+		return messages.ChangeListFocusMsg{Target: messages.FormFocus}
+	}
+}
+
+func closeForm(status messages.FormClosedStatus) tea.Cmd {
+	return func() tea.Msg {
+		return messages.FormClosedMsg{Status: status}
+	}
 }
 
 func ConnectDB() tea.Cmd {

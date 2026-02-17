@@ -1,0 +1,249 @@
+(tea.WindowSizeMsg) {
+ Width: (int) 316,
+ Height: (int) 71
+}
+(huh.updateFieldMsg) {
+}
+(spinner.TickMsg) {
+ Time: (time.Time) 2026-02-17 11:09:35.255721 -0700 MST m=+0.023841709,
+ tag: (int) 0,
+ ID: (int) 1
+}
+(messages.DbConnectedMsg) {
+ Manager: (*bookmarks.BookmarkManager)(0x140001fe1b0)({
+  repo: (*generated.Queries)(0x140001fe1a0)({
+   db: (*sql.DB)(0x140001a76c0)({
+    waitDuration: (atomic.Int64) {
+     _: (atomic.noCopy) {
+     },
+     _: (atomic.align64) {
+     },
+     v: (int64) 0
+    },
+    connector: (sql.dsnConnector) {
+     dsn: (string) (len=49) "/Users/justin.bak/.local/share/booky/bookmarks.db",
+     driver: (*sqlite.Driver)(0x1055f4750)({
+      udfs: (map[string]*sqlite.userDefinedFunction) {
+      }
+     })
+    },
+    numClosed: (atomic.Uint64) {
+     _: (atomic.noCopy) {
+     },
+     _: (atomic.align64) {
+     },
+     v: (uint64) 0
+    },
+    mu: (sync.Mutex) {
+     _: (sync.noCopy) {
+     },
+     mu: (sync.Mutex) {
+      state: (int32) 0,
+      sema: (uint32) 0
+     }
+    },
+    freeConn: ([]*sql.driverConn) (len=1 cap=1) {
+     (*sql.driverConn)(0x14000030080)({
+      db: (*sql.DB)(0x140001a76c0)(<already shown>),
+      createdAt: (time.Time) 2026-02-17 11:09:35.257213 -0700 MST m=+0.025333709,
+      Mutex: (sync.Mutex) {
+       _: (sync.noCopy) {
+       },
+       mu: (sync.Mutex) {
+        state: (int32) 0,
+        sema: (uint32) 0
+       }
+      },
+      ci: (*sqlite.conn)(0x14000171c00)({
+       db: (uintptr) 0x10c690028,
+       tls: (*libc.TLS)(0x140002ce0d0)({
+        errnop: (uintptr) 0x10c620050,
+        allocaStack: ([][]uintptr) <nil>,
+        allocas: ([]uintptr) <nil>,
+        jumpBuffers: ([]uintptr) <nil>,
+        lastError: (uint32) 0,
+        pthreadData: (libc.pthreadData) {
+         done: (chan struct {}) 0x14000284150,
+         kv: (map[uint64]uintptr) <nil>,
+         retVal: (uintptr) <nil>,
+         wait: (chan struct {}) (cap=1) 0x140002840e0,
+         detached: (bool) false
+        },
+        sp: (int) 1,
+        stack: (libc.stackHeader) {
+         free: (int) 4000,
+         page: (uintptr) 0x10c620020,
+         prev: (uintptr) <nil>,
+         next: (uintptr) 0x10c621020,
+         sp: (uintptr) 0x10c620060,
+         _: (libc.stackHeaderPadding) {
+          a: (uintptr) <nil>
+         }
+        },
+        ID: (int32) 2,
+        reentryGuard: (int32) 0,
+        stackHeaderBalance: (int32) 0
+       }),
+       Mutex: (sync.Mutex) {
+        _: (sync.noCopy) {
+        },
+        mu: (sync.Mutex) {
+         state: (int32) 0,
+         sema: (uint32) 0
+        }
+       },
+       writeTimeFormat: (string) "",
+       beginMode: (string) ""
+      }),
+      needReset: (bool) true,
+      closed: (bool) false,
+      finalClosed: (bool) false,
+      openStmt: (map[*sql.driverStmt]bool) <nil>,
+      inUse: (bool) false,
+      dbmuClosed: (bool) false,
+      returnedAt: (time.Time) 2026-02-17 11:09:35.257763 -0700 MST m=+0.025883584,
+      onPut: ([]func()) <nil>
+     })
+    },
+    connRequests: (sql.connRequestSet) {
+     s: ([]sql.connRequestAndIndex) <nil>
+    },
+    numOpen: (int) 1,
+    openerCh: (chan struct {}) (cap=1000000) 0x14000284070,
+    closed: (bool) false,
+    dep: (map[sql.finalCloser]sql.depSet) (len=1) {
+     (*sql.driverConn)(0x14000030080)({
+      db: (*sql.DB)(0x140001a76c0)(<already shown>),
+      createdAt: (time.Time) 2026-02-17 11:09:35.257213 -0700 MST m=+0.025333709,
+      Mutex: (sync.Mutex) {
+       _: (sync.noCopy) {
+       },
+       mu: (sync.Mutex) {
+        state: (int32) 0,
+        sema: (uint32) 0
+       }
+      },
+      ci: (*sqlite.conn)(0x14000171c00)({
+       db: (uintptr) 0x10c690028,
+       tls: (*libc.TLS)(0x140002ce0d0)({
+        errnop: (uintptr) 0x10c620050,
+        allocaStack: ([][]uintptr) <nil>,
+        allocas: ([]uintptr) <nil>,
+        jumpBuffers: ([]uintptr) <nil>,
+        lastError: (uint32) 0,
+        pthreadData: (libc.pthreadData) {
+         done: (chan struct {}) 0x14000284150,
+         kv: (map[uint64]uintptr) <nil>,
+         retVal: (uintptr) <nil>,
+         wait: (chan struct {}) (cap=1) 0x140002840e0,
+         detached: (bool) false
+        },
+        sp: (int) 1,
+        stack: (libc.stackHeader) {
+         free: (int) 4000,
+         page: (uintptr) 0x10c620020,
+         prev: (uintptr) <nil>,
+         next: (uintptr) 0x10c621020,
+         sp: (uintptr) 0x10c620060,
+         _: (libc.stackHeaderPadding) {
+          a: (uintptr) <nil>
+         }
+        },
+        ID: (int32) 2,
+        reentryGuard: (int32) 0,
+        stackHeaderBalance: (int32) 0
+       }),
+       Mutex: (sync.Mutex) {
+        _: (sync.noCopy) {
+        },
+        mu: (sync.Mutex) {
+         state: (int32) 0,
+         sema: (uint32) 0
+        }
+       },
+       writeTimeFormat: (string) "",
+       beginMode: (string) ""
+      }),
+      needReset: (bool) true,
+      closed: (bool) false,
+      finalClosed: (bool) false,
+      openStmt: (map[*sql.driverStmt]bool) <nil>,
+      inUse: (bool) false,
+      dbmuClosed: (bool) false,
+      returnedAt: (time.Time) 2026-02-17 11:09:35.257763 -0700 MST m=+0.025883584,
+      onPut: ([]func()) <nil>
+     }): (sql.depSet) (len=1) {
+      (*sql.driverConn)(0x14000030080)(<already shown>): (bool) true
+     }
+    },
+    lastPut: (map[*sql.driverConn]string) {
+    },
+    maxIdleCount: (int) 0,
+    maxOpen: (int) 0,
+    maxLifetime: (time.Duration) 0s,
+    maxIdleTime: (time.Duration) 0s,
+    cleanerCh: (chan struct {}) <nil>,
+    waitCount: (int64) 0,
+    maxIdleClosed: (int64) 0,
+    maxIdleTimeClosed: (int64) 0,
+    maxLifetimeClosed: (int64) 0,
+    stop: (func()) 0x104d83b10
+   })
+  })
+ }),
+ Close: (func() error) 0x1050a85b0
+}
+(messages.BookmarksFetchedMsg) {
+ Bookmarks: ([]bookmarks.Bookmark) (len=1 cap=1) {
+  (bookmarks.Bookmark) {
+   ID: (int64) 1,
+   Title: (string) (len=8) "boot.dev",
+   Url: (*url.URL)(0x140005a2000)(https://boot.dev),
+   Description: (string) (len=61) "backend developer learning platform that is built like an RPG"
+  }
+ },
+ Tags: ([]string) (len=4 cap=4) {
+  (string) (len=3) "all",
+  (string) (len=7) "backend",
+  (string) (len=2) "go",
+  (string) (len=8) "learning"
+ }
+}
+(cursor.BlinkMsg) {
+ id: (int) 0,
+ tag: (int) 1
+}
+(tea.windowSizeMsg) {
+}
+(tea.WindowSizeMsg) {
+ Width: (int) 316,
+ Height: (int) 71
+}
+(tea.KeyMsg) a
+(messages.ChangeListFocusMsg) {
+ Target: (messages.ListFocusTarget) (len=4) "form"
+}
+(tea.KeyMsg) ctrl+c
+(messages.FormClosedMsg) {
+ Status: (messages.FormClosedStatus) 1,
+ Name: (string) "",
+ Url: (string) "",
+ Desc: (string) "",
+ Tags: ([]string) <nil>
+}
+(messages.ChangeListFocusMsg) {
+ Target: (messages.ListFocusTarget) (len=4) "tags"
+}
+(huh.updateFieldMsg) {
+}
+(cursor.BlinkMsg) {
+ id: (int) 0,
+ tag: (int) 1
+}
+(tea.windowSizeMsg) {
+}
+(tea.WindowSizeMsg) {
+ Width: (int) 316,
+ Height: (int) 71
+}
+(tea.KeyMsg) ctrl+c

@@ -3,15 +3,15 @@ package messages
 import "github.com/Tkdefender88/booky/internal/bookmarks"
 
 type ErrMsg struct {
-	err error
+	Err error
 }
 
 func (e ErrMsg) Error() string {
-	return e.err.Error()
+	return e.Err.Error()
 }
 
 func NewErrMsg(err error) ErrMsg {
-	return ErrMsg{err: err}
+	return ErrMsg{Err: err}
 }
 
 type BookmarkAddedMsg struct{}

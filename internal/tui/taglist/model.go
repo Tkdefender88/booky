@@ -7,12 +7,13 @@ import (
 )
 
 type Model struct {
-	list    list.Model
-	active  bool
-	keymap  KeyMap
-	width   int
-	height  int
-	manager *bookmarks.BookmarkManager
+	list        list.Model
+	active      bool
+	keymap      KeyMap
+	width       int
+	height      int
+	manager     *bookmarks.BookmarkManager
+	selectedTag string
 }
 
 func NewModel() Model {

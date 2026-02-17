@@ -21,6 +21,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				tags = append(tags, newTag(t))
 			}
 			m.list.SetItems(tags)
+			if selected, ok := m.list.SelectedItem().(tag); ok {
+				m.selectedTag = selected.Name()
+			}
 		}
 	case tea.KeyMsg:
 		if m.active {
@@ -31,7 +34,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				list, cmd := m.list.Update(msg)
 				if selected, ok := list.SelectedItem().(tag); ok {
 					tagName := selected.Name()
-					cmds = append(cmds, FetchBookmarksByTag(tagName, m.manager))
+					if tagName != m.selectedTag {
+						m.selectedTag = tagName
+						cmds = append(cmds, FetchBookmarksByTag(tagName, m.manager))
+					}
 				}
 				cmds = append(cmds, cmd)
 				m.list = list
@@ -40,4 +46,3 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	return m, tea.Batch(cmds...)
 }
-
