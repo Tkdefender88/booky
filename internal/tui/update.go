@@ -128,12 +128,18 @@ func parseTags(tags string) []string {
 }
 
 func updateWindowSize(model Model, msg tea.WindowSizeMsg) Model {
-	phi := 1.6180
-	tagWidth := int(float64(msg.Width) / (phi + 1))
-	tagWidth = max(tagWidth, 30)
-	bookmarkWidth := msg.Width - tagWidth
+	// Store terminal dimensions in model
+	model.width = msg.Width
+	model.height = msg.Height
 	model.help.Width = msg.Width
-	model.bookmarkList.SetSize(bookmarkWidth, msg.Height-4)
-	model.tagList.SetSize(tagWidth, msg.Height-4)
+
+	// Calculate layout dimensions
+	listHeight := model.getListHeight()
+	tagWidth, bookmarkWidth := model.getListWidths()
+
+	// Apply dimensions to sub-components
+	model.bookmarkList.SetSize(bookmarkWidth, listHeight)
+	model.tagList.SetSize(tagWidth, listHeight)
+
 	return model
 }

@@ -48,6 +48,9 @@ type Model struct {
 	manager  *bookmarks.BookmarkManager
 	shutdown func() error
 
+	width  int
+	height int
+
 	err error
 }
 
@@ -107,4 +110,35 @@ func NewModel(debug bool) (Model, error) {
 
 		state: DBConnecting,
 	}, nil
+}
+
+// getListHeight calculates the available height for list components
+// This dynamically accounts for styling overhead by measuring actual rendered heights
+// If the list style changes (borders, padding), this calculation adapts automatically
+func (m Model) getListHeight() int {
+	// Measure the actual height overhead from list styling
+	// This includes borders, padding, and any other style effects
+	styleOverhead := calculateListStyleOverhead()
+
+	// We also want to reserve space for a future footer component (1 line)
+	// and a little breathing room
+	reservedForFooter := 1
+
+	// Calculate available height for list content
+	available := m.height - styleOverhead - reservedForFooter
+
+	// Ensure we don't go below reasonable minimum
+	return max(available, MinContentHeight)
+}
+
+// getListWidth calculates individual list widths using golden ratio split
+// Returns (tagListWidth, bookmarkListWidth)
+func (m Model) getListWidths() (int, int) {
+	phi := 1.6180
+	// Golden ratio: divide width between left (tags) and right (bookmarks)
+	tagWidth := int(float64(m.width) / (phi + 1))
+	// Ensure minimum width for tag list
+	tagWidth = max(tagWidth, 30)
+	bookmarkWidth := m.width - tagWidth
+	return tagWidth, bookmarkWidth
 }
