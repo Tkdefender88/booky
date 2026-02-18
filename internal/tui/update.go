@@ -104,18 +104,11 @@ func updateForm(model Model, msg tea.Msg) (Model, tea.Cmd) {
 		url := form.GetString(string(Url))
 		desc := form.GetString(string(Description))
 		tags := parseTags(form.GetString(string(Tags)))
-		model.state = TagsList
-		model.addBookmark = form
-		return model, tea.Batch(
-			AddBookmark(model.manager, name, url, desc, tags),
-			closeForm(messages.FormClosedSuccess),
-		)
+		return model, formClosedSuccess(name, url, desc, tags)
 	}
 
 	if form.State == huh.StateAborted {
-		model.addBookmark = form
-		model.state = TagsList
-		return model, closeForm(messages.FormClosedAborted)
+		return model, formClosedAborted
 	}
 
 	return model, cmd

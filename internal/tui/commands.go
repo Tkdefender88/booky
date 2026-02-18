@@ -21,9 +21,21 @@ func changeToFormFocus() tea.Cmd {
 	}
 }
 
-func closeForm(status messages.FormClosedStatus) tea.Cmd {
+func formClosedSuccess(name, url, desc string, tags []string) tea.Cmd {
 	return func() tea.Msg {
-		return messages.FormClosedMsg{Status: status}
+		return messages.FormClosedMsg{
+			Status: messages.FormClosedSuccess,
+			Name:   name,
+			Url:    url,
+			Desc:   desc,
+			Tags:   tags,
+		}
+	}
+}
+
+func formClosedAborted() tea.Msg {
+	return messages.FormClosedMsg{
+		Status: messages.FormClosedAborted,
 	}
 }
 
