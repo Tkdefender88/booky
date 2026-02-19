@@ -1,3 +1,8 @@
+
+Set Width 1200
+Set Height 800
+Set FontSize 20
+
 Sleep 2s
 Type 'booky add https://overthewire.org/wargames/ -n "over the wire" -d "hacking wargames and ctfs" -t hacking,wargames,ctfs,learning,linux'
 Sleep 500ms
