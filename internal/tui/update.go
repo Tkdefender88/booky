@@ -8,6 +8,7 @@ import (
 	"github.com/Tkdefender88/booky/internal/tui/keys"
 	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -63,14 +64,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		os.Exit(0)
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, keys.Global.AddBookmark):
-			if m.state != AddingBookmark {
-				cmds = append(cmds, changeToFormFocus())
-			}
-		case key.Matches(msg, keys.Global.Quit):
-			if m.state != AddingBookmark {
-				cmds = append(cmds, tea.Quit)
+		// Check if user is actively filtering in either list
+		isFiltering := m.bookmarkList.FilterState() == list.Filtering ||
+			m.tagList.FilterState() == list.Filtering
+
+		// Skip global key bindings while filtering (Ctrl+C always works)
+		if !isFiltering {
+			switch {
+			case key.Matches(msg, keys.Global.AddBookmark):
+				if m.state != AddingBookmark {
+					cmds = append(cmds, changeToFormFocus())
+				}
+			case key.Matches(msg, keys.Global.Quit):
+				if m.state != AddingBookmark {
+					cmds = append(cmds, tea.Quit)
+				}
 			}
 		}
 	}

@@ -19,6 +19,10 @@ type Model struct {
 func NewModel() Model {
 	list := list.New([]list.Item{}, tagDelegate{}, 0, 0)
 	list.SetShowHelp(false)
+
+	// Disable the default 'q' quit key binding - we handle quit at the app level
+	list.KeyMap.Quit.Unbind()
+
 	return Model{
 		active: true,
 		list:   list,
@@ -40,4 +44,16 @@ func (m Model) Init() tea.Cmd {
 func (m Model) HelpBindings() []key.Binding {
 	// Tag list currently has no unique keys
 	return []key.Binding{}
+}
+
+// FilterState returns the current filtering state of the list
+// This allows parent components to check if user is actively filtering
+func (m Model) FilterState() list.FilterState {
+	return m.list.FilterState()
+}
+
+// SetFilterState sets the filtering state of the list
+// This is primarily used for testing purposes
+func (m *Model) SetFilterState(state list.FilterState) {
+	m.list.SetFilterState(state)
 }
