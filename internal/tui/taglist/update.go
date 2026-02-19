@@ -44,6 +44,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.list = list
 			}
 		}
+	default:
+		// Always pass other messages (like FilterMatchesMsg) to the list
+		list, cmd := m.list.Update(msg)
+		m.list = list
+		cmds = append(cmds, cmd)
 	}
 	return m, tea.Batch(cmds...)
 }

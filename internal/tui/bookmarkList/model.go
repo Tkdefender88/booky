@@ -56,3 +56,13 @@ func (m Model) FilterState() list.FilterState {
 func (m *Model) SetFilterState(state list.FilterState) {
 	m.list.SetFilterState(state)
 }
+
+// FilteringEnabled returns whether filtering is enabled
+func (m Model) FilteringEnabled() bool {
+	return m.list.FilteringEnabled()
+}
+
+// SetItems sets the items in the list
+func (m *Model) SetItems(items []list.Item) {
+	m.list.SetItems(items)
+}
