@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 create table tags (
-  tag_name text not null primary key
+  id integer primary key,
+  tag_name text not null unique
 );
 -- +goose StatementEnd
 

@@ -1,74 +1,154 @@
 package tui
 
 import (
+	"io"
+	"os"
+
 	"github.com/Tkdefender88/booky/internal/bookmarks"
+	bookmarklist "github.com/Tkdefender88/booky/internal/tui/bookmarkList"
+	"github.com/Tkdefender88/booky/internal/tui/taglist"
 	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 type State int
-type Focus int
 
-func nextFocus(f Focus) Focus {
-	return Focus((f + 1) % 2)
-}
-
-type ErrMsg struct {
-	err error
-}
+type FormKey string
 
 const (
-	tagsFocus Focus = iota
-	bookmarksFocus
+	Name        FormKey = "Name"
+	Description FormKey = "Description"
+	Url         FormKey = "Url"
+	Tags        FormKey = "Tags"
 )
 
 const (
 	DBConnecting State = iota
 	LoadingBookmarks
-	Success
+	BookmarksList
+	TagsList
+	AddingBookmark
 )
 
+// KeyProvider is implemented by components that provide dynamic key bindings
+// for display in the help footer
+type KeyProvider interface {
+	HelpBindings() []key.Binding
+}
+
 type Model struct {
-	bookmarkList list.Model
-	tagList      list.Model
+	dump     io.Writer
+	state    State
+	spinning bool
+
+	bookmarkList bookmarklist.Model
+	tagList      taglist.Model
 	spinner      spinner.Model
 	help         help.Model
+	addBookmark  *huh.Form
 
-	keymap KeyMap
+	manager  *bookmarks.BookmarkManager
+	shutdown func() error
 
-	manager *bookmarks.BookmarkManager
-
-	state       State
-	focus       Focus
-	shutdown    func() error
-	selectedTag string
+	width  int
+	height int
 
 	err error
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.spinner.Tick, ConnectDB())
+	return tea.Batch(
+		m.spinner.Tick,
+		ConnectDB(),
+		m.addBookmark.Init(),
+	)
 }
 
-func NewModel() Model {
+func createForm() *huh.Form {
+	// Create custom keymap with ESC to quit
+	keymap := huh.NewDefaultKeyMap()
+	keymap.Quit = key.NewBinding(
+		key.WithKeys("ctrl+c", "esc"),
+		key.WithHelp("esc/ctrl+c", "quit"),
+	)
+
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Key(string(Name)).
+				Title("Bookmark Name").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Url)).
+				Title("Url").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Description)).
+				Title("Description").
+				Prompt("? "),
+			huh.NewInput().
+				Key(string(Tags)).
+				Title("Tags").
+				Prompt("? "),
+		),
+	).WithKeyMap(keymap).WithShowHelp(true).WithWidth(60)
+}
+
+func NewModel(debug bool) (Model, error) {
+	var dump *os.File
+	if debug {
+		var err error
+		dump, err = os.OpenFile("DEBUG.dump", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+		if err != nil {
+			return Model{}, err
+		}
+	}
 	spinner := spinner.New()
-	bmList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	tagList := list.New([]list.Item{}, tagDelegate{}, 0, 0)
-	tagList.SetShowHelp(false)
-	bmList.SetShowHelp(false)
+	bmList := bookmarklist.NewModel()
+	tagList := taglist.NewModel()
 
 	return Model{
+		dump:         dump,
 		spinner:      spinner,
 		bookmarkList: bmList,
 		tagList:      tagList,
 		help:         help.New(),
+		addBookmark:  createForm(),
 
-		keymap: TagsKeyMap(),
+		state: DBConnecting,
+	}, nil
+}
 
-		state:       DBConnecting,
-		focus:       tagsFocus,
-		selectedTag: "",
-	}
+// getListHeight calculates the available height for list components
+// This dynamically accounts for styling overhead by measuring actual rendered heights
+// If the list style changes (borders, padding), this calculation adapts automatically
+func (m Model) getListHeight() int {
+	// Measure the actual height overhead from list styling
+	// This includes borders, padding, and any other style effects
+	styleOverhead := calculateListStyleOverhead()
+
+	// We also want to reserve space for a future footer component (1 line)
+	// and a little breathing room
+	reservedForFooter := 1
+
+	// Calculate available height for list content
+	available := m.height - styleOverhead - reservedForFooter
+
+	// Ensure we don't go below reasonable minimum
+	return max(available, MinContentHeight)
+}
+
+// getListWidth calculates individual list widths using golden ratio split
+// Returns (tagListWidth, bookmarkListWidth)
+func (m Model) getListWidths() (int, int) {
+	phi := 1.6180
+	// Golden ratio: divide width between left (tags) and right (bookmarks)
+	tagWidth := int(float64(m.width) / (phi + 1))
+	// Ensure minimum width for tag list
+	tagWidth = max(tagWidth, 30)
+	bookmarkWidth := m.width - tagWidth
+	return tagWidth, bookmarkWidth
 }

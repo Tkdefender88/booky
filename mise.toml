@@ -13,6 +13,9 @@ run = "rm -rf ./bin"
 [tasks.migrate]
 run = "goose -dir ./internal/repo/migrations/ sqlite3 ~/.local/share/booky/bookmarks.db up"
 
+[tasks.migrate-down]
+run = "goose -dir ./internal/repo/migrations/ sqlite3 ~/.local/share/booky/bookmarks.db down"
+
 [tasks.generate]
 run = "sqlc generate"
 

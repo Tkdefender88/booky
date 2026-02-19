@@ -10,7 +10,7 @@ import (
 
 type Querier interface {
 	CreateBookmark(ctx context.Context, arg CreateBookmarkParams) (int64, error)
-	CreateTag(ctx context.Context, tagName string) error
+	CreateTag(ctx context.Context, tagName string) (int64, error)
 	GetBookmarks(ctx context.Context) ([]Bookmark, error)
 	GetBookmarksByTag(ctx context.Context, tag string) ([]Bookmark, error)
 	GetTags(ctx context.Context) ([]string, error)

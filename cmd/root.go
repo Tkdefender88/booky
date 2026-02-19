@@ -13,6 +13,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(add.Cmd)
+	rootCmd.Flags().BoolP("debug", "d", false, "enable debug mode")
 }
 
 var rootCmd = &cobra.Command{
@@ -24,7 +25,16 @@ var rootCmd = &cobra.Command{
 }
 
 func launchTui(cmd *cobra.Command, args []string) error {
-	model := tui.NewModel()
+
+	debug, err := cmd.Flags().GetBool("debug")
+	if err != nil {
+		return err
+	}
+
+	model, err := tui.NewModel(debug)
+	if err != nil {
+		return err
+	}
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {

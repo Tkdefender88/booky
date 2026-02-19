@@ -3,29 +3,56 @@ package tui
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/Tkdefender88/booky/internal/tui/keys"
+	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.dump != nil {
+		spew.Fdump(m.dump, msg)
+	}
 	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
-	case DbConnectMsg:
+	case messages.ErrMsg:
+		m.err = msg.Err
+	case messages.DbConnectedMsg:
 		m.state = LoadingBookmarks
-		m.manager = msg.manager
-		m.shutdown = msg.close
-		cmds = append(cmds, FetchBookmarks(msg.manager))
-	case BookmarksMsg:
+		m.manager = msg.Manager
+		m.shutdown = msg.Close
+		cmds = append(cmds, FetchBookmarks(msg.Manager))
+	case messages.BookmarksFetchedMsg:
+		m.spinning = false
+		m.state = TagsList
+	case messages.BookmarkAddedMsg:
+		cmds = append(cmds, FetchBookmarks(m.manager))
+	case messages.ChangeListFocusMsg:
+		switch msg.Target {
+		case messages.BookmarkFocus:
+			m.state = BookmarksList
+		case messages.TagFocus:
+			m.state = TagsList
+		case messages.FormFocus:
+			m.state = AddingBookmark
+		}
+	case spinner.TickMsg:
 		var cmd tea.Cmd
-		m, cmd = updateLists(m, msg)
-		cmds = append(cmds, cmd)
-	case tea.KeyMsg:
-		var cmd tea.Cmd
-		m, cmd = handleKey(m, msg)
-		cmds = append(cmds, cmd)
+		m.spinner, cmd = m.spinner.Update(msg)
+		if m.spinning {
+			cmds = append(cmds, cmd)
+		}
+	case messages.FormClosedMsg:
+		if msg.Status == messages.FormClosedSuccess {
+			cmds = append(cmds, AddBookmark(m.manager, msg.Name, msg.Url, msg.Desc, msg.Tags))
+		}
+		m.addBookmark = createForm()
+		cmds = append(cmds, changeToTagsFocus, m.addBookmark.Init())
 	case tea.WindowSizeMsg:
 		m = updateWindowSize(m, msg)
 	case tea.QuitMsg:
@@ -35,87 +62,85 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		os.Exit(0)
-	}
-
-	var spinCmd tea.Cmd
-	m.spinner, spinCmd = m.spinner.Update(msg)
-	cmds = append(cmds, spinCmd)
-
-	var listCmd tea.Cmd
-	switch m.focus {
-	case bookmarksFocus:
-		m.bookmarkList, listCmd = m.bookmarkList.Update(msg)
-	case tagsFocus:
-		m.tagList, listCmd = m.tagList.Update(msg)
-		if selectedTag, ok := m.tagList.SelectedItem().(tag); ok {
-			if m.selectedTag != selectedTag.Name() {
-				m.selectedTag = selectedTag.Name()
-				cmds = append(cmds, FetchBookmarksByTag(selectedTag.name, m.manager))
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, keys.Global.AddBookmark):
+			if m.state != AddingBookmark {
+				cmds = append(cmds, changeToFormFocus())
+			}
+		case key.Matches(msg, keys.Global.Quit):
+			if m.state != AddingBookmark {
+				cmds = append(cmds, tea.Quit)
 			}
 		}
 	}
-	cmds = append(cmds, listCmd)
+
+	if m.state == AddingBookmark {
+		var formCmd tea.Cmd
+		m, formCmd = updateForm(m, msg)
+		cmds = append(cmds, formCmd)
+	}
+
+	bookmarks, cmd := m.bookmarkList.Update(msg)
+	m.bookmarkList = bookmarks
+	cmds = append(cmds, cmd)
+
+	tags, cmd := m.tagList.Update(msg)
+	m.tagList = tags
+	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
-func updateLists(model Model, msg BookmarksMsg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
+func updateForm(model Model, msg tea.Msg) (Model, tea.Cmd) {
+	var form *huh.Form = nil
 
-	model.state = Success
-	bookmarks := make([]list.Item, 0, len(msg.bookmarks))
-	for _, b := range msg.bookmarks {
-		bookmarks = append(bookmarks, fromBookmark(b))
-	}
-	cmds = append(cmds, model.bookmarkList.SetItems(bookmarks))
-
-	if len(msg.tags) > 0 {
-		tags := make([]list.Item, 0, len(msg.tags))
-		for _, t := range msg.tags {
-			tags = append(tags, newTag(t))
-		}
-		cmds = append(cmds, model.tagList.SetItems(tags))
+	fmodel, cmd := model.addBookmark.Update(msg)
+	if addForm, ok := fmodel.(*huh.Form); ok {
+		form = addForm
 	}
 
-	return model, tea.Batch(cmds...)
+	if form.State == huh.StateCompleted {
+		name := form.GetString(string(Name))
+		url := form.GetString(string(Url))
+		desc := form.GetString(string(Description))
+		tags := parseTags(form.GetString(string(Tags)))
+		return model, formClosedSuccess(name, url, desc, tags)
+	}
+
+	if form.State == huh.StateAborted {
+		return model, formClosedAborted
+	}
+
+	return model, cmd
 }
 
-func handleKey(model Model, msg tea.KeyMsg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	switch {
-	case key.Matches(msg, model.keymap.Quit):
-		cmds = append(cmds, tea.Quit)
-	case key.Matches(msg, model.keymap.SwitchView):
-		if model.focus == tagsFocus && model.tagList.FilterState() == list.Filtering {
-			return model, nil
-		}
-		model.focus = nextFocus(model.focus)
-		// Switch keymaps based on new focus
-		if model.focus == bookmarksFocus {
-			model.keymap = BookmarksKeyMap()
-		} else {
-			model.keymap = TagsKeyMap()
-		}
-	case key.Matches(msg, model.keymap.Open):
-		if model.bookmarkList.FilterState() == list.Filtering ||
-			model.tagList.FilterState() == list.Filtering {
-			return model, nil
-		}
-
-		if bookmark, ok := model.bookmarkList.SelectedItem().(bookmark); ok {
-			cmds = append(cmds, openBookmark(bookmark))
+func parseTags(tags string) []string {
+	t := strings.TrimSpace(tags)
+	rawTagList := strings.Split(t, ",")
+	var tagList []string
+	for _, tag := range rawTagList {
+		tag = strings.TrimSpace(tag)
+		if tag != "" {
+			tagList = append(tagList, tag)
 		}
 	}
-	return model, tea.Batch(cmds...)
+	return tagList
 }
 
 func updateWindowSize(model Model, msg tea.WindowSizeMsg) Model {
-	phi := 1.6180
-	tagWidth := int(float64(msg.Width) / (phi + 1))
-	tagWidth = max(tagWidth, 30)
-	bookmarkWidth := msg.Width - tagWidth
+	// Store terminal dimensions in model
+	model.width = msg.Width
+	model.height = msg.Height
 	model.help.Width = msg.Width
-	model.bookmarkList.SetSize(bookmarkWidth, msg.Height-4)
-	model.tagList.SetSize(tagWidth, msg.Height-4)
+
+	// Calculate layout dimensions
+	listHeight := model.getListHeight()
+	tagWidth, bookmarkWidth := model.getListWidths()
+
+	// Apply dimensions to sub-components
+	model.bookmarkList.SetSize(bookmarkWidth, listHeight)
+	model.tagList.SetSize(tagWidth, listHeight)
+
 	return model
 }

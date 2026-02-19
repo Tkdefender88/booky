@@ -60,10 +60,11 @@ func (q *Queries) GetBookmarks(ctx context.Context) ([]Bookmark, error) {
 }
 
 const getBookmarksByTag = `-- name: GetBookmarksByTag :many
-select id, title, url, description 
+select b.id, b.title, b.url, b.description
 from bookmarks b
 inner join bookmarks_tags bt on b.id = bt.bookmark_id
-where bt.tag_name = ?1 
+inner join tags t on bt.tag_id = t.id
+where t.tag_name = ?1
 order by b.id desc
 `
 
@@ -96,15 +97,15 @@ func (q *Queries) GetBookmarksByTag(ctx context.Context, tag string) ([]Bookmark
 }
 
 const insertBookmarkTagJunction = `-- name: InsertBookmarkTagJunction :exec
-insert into bookmarks_tags (bookmark_id, tag_name) values (?1, ?2)
+insert into bookmarks_tags (bookmark_id, tag_id) values (?1, ?2)
 `
 
 type InsertBookmarkTagJunctionParams struct {
 	BookmarkID int64
-	Tag        string
+	TagID      int64
 }
 
 func (q *Queries) InsertBookmarkTagJunction(ctx context.Context, arg InsertBookmarkTagJunctionParams) error {
-	_, err := q.db.ExecContext(ctx, insertBookmarkTagJunction, arg.BookmarkID, arg.Tag)
+	_, err := q.db.ExecContext(ctx, insertBookmarkTagJunction, arg.BookmarkID, arg.TagID)
 	return err
 }

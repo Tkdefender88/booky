@@ -9,13 +9,15 @@ import (
 	"context"
 )
 
-const createTag = `-- name: CreateTag :exec
-insert or ignore into tags (tag_name) values (?1)
+const createTag = `-- name: CreateTag :one
+insert into tags (tag_name) values (?1) on conflict(tag_name) do update set tag_name=excluded.tag_name returning id
 `
 
-func (q *Queries) CreateTag(ctx context.Context, tagName string) error {
-	_, err := q.db.ExecContext(ctx, createTag, tagName)
-	return err
+func (q *Queries) CreateTag(ctx context.Context, tagName string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, createTag, tagName)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getTags = `-- name: GetTags :many

@@ -16,10 +16,12 @@ type Bookmark struct {
 }
 
 type BookmarksTag struct {
-	TagName    string
+	TagID      int64
 	BookmarkID int64
 }
 
 type Tag struct {
-	TagName string
+	ID       int64
+	TagName  string
+	TagOrder int64
 }
