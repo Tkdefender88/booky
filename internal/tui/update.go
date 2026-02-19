@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Tkdefender88/booky/internal/tui/keys"
 	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -63,11 +64,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		os.Exit(0)
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.keymap.AddBookmark):
+		case key.Matches(msg, keys.Global.AddBookmark):
 			if m.state != AddingBookmark {
 				cmds = append(cmds, changeToFormFocus())
 			}
-		case key.Matches(msg, m.keymap.Quit):
+		case key.Matches(msg, keys.Global.Quit):
 			if m.state != AddingBookmark {
 				cmds = append(cmds, tea.Quit)
 			}

@@ -1,16 +1,8 @@
 package taglist
 
-import "github.com/charmbracelet/bubbles/key"
-
-type KeyMap struct {
-	SwitchView key.Binding
+type keyMap struct {
+	// Future: Add tag-list-specific keys here if needed
 }
 
-func KeyBinds() KeyMap {
-	return KeyMap{
-		SwitchView: key.NewBinding(
-			key.WithKeys("tab", "enter"),
-			key.WithHelp("tab", "switch view"),
-		),
-	}
-}
+// localKeys contains keys specific to the tag list component
+var localKeys = keyMap{}

@@ -2,6 +2,7 @@ package taglist
 
 import (
 	"github.com/Tkdefender88/booky/internal/bookmarks"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -9,7 +10,6 @@ import (
 type Model struct {
 	list        list.Model
 	active      bool
-	keymap      KeyMap
 	width       int
 	height      int
 	manager     *bookmarks.BookmarkManager
@@ -22,7 +22,6 @@ func NewModel() Model {
 	return Model{
 		active: true,
 		list:   list,
-		keymap: KeyBinds(),
 	}
 }
 
@@ -34,4 +33,11 @@ func (m *Model) SetSize(width, height int) {
 
 func (m Model) Init() tea.Cmd {
 	return nil
+}
+
+// HelpBindings returns the key bindings for the tag list component
+// Implements the KeyProvider interface
+func (m Model) HelpBindings() []key.Binding {
+	// Tag list currently has no unique keys
+	return []key.Binding{}
 }

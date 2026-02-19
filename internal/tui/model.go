@@ -8,6 +8,7 @@ import (
 	bookmarklist "github.com/Tkdefender88/booky/internal/tui/bookmarkList"
 	"github.com/Tkdefender88/booky/internal/tui/taglist"
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -32,6 +33,12 @@ const (
 	AddingBookmark
 )
 
+// KeyProvider is implemented by components that provide dynamic key bindings
+// for display in the help footer
+type KeyProvider interface {
+	HelpBindings() []key.Binding
+}
+
 type Model struct {
 	dump     io.Writer
 	state    State
@@ -42,8 +49,6 @@ type Model struct {
 	spinner      spinner.Model
 	help         help.Model
 	addBookmark  *huh.Form
-
-	keymap KeyMap
 
 	manager  *bookmarks.BookmarkManager
 	shutdown func() error
@@ -63,6 +68,13 @@ func (m Model) Init() tea.Cmd {
 }
 
 func createForm() *huh.Form {
+	// Create custom keymap with ESC to quit
+	keymap := huh.NewDefaultKeyMap()
+	keymap.Quit = key.NewBinding(
+		key.WithKeys("ctrl+c", "esc"),
+		key.WithHelp("esc/ctrl+c", "quit"),
+	)
+
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -82,7 +94,7 @@ func createForm() *huh.Form {
 				Title("Tags").
 				Prompt("? "),
 		),
-	)
+	).WithKeyMap(keymap).WithShowHelp(true)
 }
 
 func NewModel(debug bool) (Model, error) {
@@ -105,8 +117,6 @@ func NewModel(debug bool) (Model, error) {
 		tagList:      tagList,
 		help:         help.New(),
 		addBookmark:  createForm(),
-
-		keymap: Keymap(),
 
 		state: DBConnecting,
 	}, nil

@@ -1,6 +1,7 @@
 package taglist
 
 import (
+	"github.com/Tkdefender88/booky/internal/tui/keys"
 	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -28,7 +29,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.active {
 			switch {
-			case key.Matches(msg, m.keymap.SwitchView):
+			case key.Matches(msg, keys.Navigation.SwitchView):
 				cmds = append(cmds, switchToBookmarks)
 			default:
 				list, cmd := m.list.Update(msg)

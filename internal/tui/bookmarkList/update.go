@@ -1,6 +1,7 @@
 package bookmarklist
 
 import (
+	"github.com/Tkdefender88/booky/internal/tui/keys"
 	"github.com/Tkdefender88/booky/internal/tui/messages"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -21,11 +22,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.active {
 			switch {
-			case key.Matches(msg, m.keymap.Open):
+			case key.Matches(msg, localKeys.Open):
 				if bookmark, ok := m.list.SelectedItem().(bookmark); ok {
 					cmds = append(cmds, openBookmark(bookmark))
 				}
-			case key.Matches(msg, m.keymap.SwitchView):
+			case key.Matches(msg, keys.Navigation.SwitchView):
 				cmds = append(cmds, switchToTags)
 			default:
 				list, cmd := m.list.Update(msg)

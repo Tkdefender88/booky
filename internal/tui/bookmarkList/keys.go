@@ -2,22 +2,14 @@ package bookmarklist
 
 import "github.com/charmbracelet/bubbles/key"
 
-type KeyMap struct {
-	// Actions
-	Open       key.Binding
-	SwitchView key.Binding
+type keyMap struct {
+	Open key.Binding
 }
 
-func KeyBinds() KeyMap {
-	return KeyMap{
-		Open: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "open bookmark"),
-		),
-		SwitchView: key.NewBinding(
-			key.WithKeys("tab"),
-			key.WithHelp("tab", "switch view"),
-		),
-	}
+// localKeys contains keys specific to the bookmark list component
+var localKeys = keyMap{
+	Open: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "open bookmark"),
+	),
 }
-
