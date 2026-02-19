@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/Tkdefender88/booky/internal/tui/keys"
+	"github.com/Tkdefender88/booky/internal/tui/styles"
 	"github.com/charmbracelet/bubbles/key"
 )
 
@@ -16,25 +17,16 @@ func (m Model) View() string {
 	switch m.state {
 	case DBConnecting, LoadingBookmarks:
 		return m.spinner.View()
-	case AddingBookmark:
-		// huh form has built-in help display at the bottom
-		return m.addBookmark.View()
-	case TagsList, BookmarksList:
-		lists := lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			m.tagList.View(),
-			m.bookmarkList.View(),
-		)
+	case TagsList, BookmarksList, AddingBookmark:
+		// Always render the base lists view
+		listsView := m.renderLists()
 
-		// Add help footer
-		footer := m.helpFooter()
+		// If form is open, layer it as a modal overlay
+		if m.state == AddingBookmark {
+			return m.renderWithModalOverlay(listsView)
+		}
 
-		fullView := lipgloss.JoinVertical(
-			lipgloss.Left,
-			lists,
-			footer,
-		)
-		return fullView
+		return listsView
 	}
 
 	return ""
@@ -83,4 +75,70 @@ func formatHelpLine(bindings []key.Binding) string {
 		Padding(0, 1)
 
 	return style.Render(line)
+}
+
+// renderLists renders the bookmark and tag lists with help footer
+func (m Model) renderLists() string {
+	lists := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		m.tagList.View(),
+		m.bookmarkList.View(),
+	)
+
+	// Add help footer
+	footer := m.helpFooter()
+
+	fullView := lipgloss.JoinVertical(
+		lipgloss.Left,
+		lists,
+		footer,
+	)
+	return fullView
+}
+
+// renderFormModal renders the form wrapped in a modal style
+func (m Model) renderFormModal() string {
+	formContent := m.addBookmark.View()
+	modal := styles.ModalStyle.Render(formContent)
+	return modal
+}
+
+// renderWithModalOverlay layers the form modal over the dimmed lists view
+func (m Model) renderWithModalOverlay(listsView string) string {
+	// Dim the background lists
+	dimmedLists := styles.DimmedStyle.Render(listsView)
+
+	// Create the modal
+	modal := m.renderFormModal()
+
+	// Get modal dimensions
+	modalLines := strings.Split(modal, "\n")
+	modalHeight := len(modalLines)
+	modalWidth := 0
+	for _, line := range modalLines {
+		// Use lipgloss Width to account for ANSI codes
+		w := lipgloss.Width(line)
+		if w > modalWidth {
+			modalWidth = w
+		}
+	}
+
+	// Calculate center position
+	x := (m.width - modalWidth) / 2
+	y := (m.height - modalHeight) / 2
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+
+	// Create layers using lipgloss Canvas
+	backgroundLayer := lipgloss.NewLayer(dimmedLists).X(0).Y(0).Z(0)
+	modalLayer := lipgloss.NewLayer(modal).X(x).Y(y).Z(1)
+
+	canvas := lipgloss.NewCanvas(backgroundLayer, modalLayer)
+
+	// Render the canvas to a string
+	return canvas.Render()
 }

@@ -94,7 +94,7 @@ func createForm() *huh.Form {
 				Title("Tags").
 				Prompt("? "),
 		),
-	).WithKeyMap(keymap).WithShowHelp(true)
+	).WithKeyMap(keymap).WithShowHelp(true).WithWidth(60)
 }
 
 func NewModel(debug bool) (Model, error) {
