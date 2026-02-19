@@ -5,3 +5,5 @@ booky.db
 booky
 plansmd/**
 DEBUG.dump
+
+.DS_Store
