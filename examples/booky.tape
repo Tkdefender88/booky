@@ -1,6 +1,6 @@
 
-Set Width 1200
-Set Height 800
+Set Width 1400
+Set Height 900
 Set FontSize 20
 
 Sleep 2s
@@ -9,17 +9,19 @@ Sleep 500ms
 Enter
 Sleep 2s
 Type "booky"
+Sleep 1s
 Enter
 Type "/backend"
 Sleep 2.5s
 Backspace 7
-Type "learng"
+Type "learning"
 Sleep 1.5s
-Backspace 6
+Backspace 8
 Type "hacking"
 Sleep 1.5s
 Backspace 7
 Sleep 1s
+Escape
 Enter
 Sleep 500ms
 Type "/boo"
@@ -28,9 +30,9 @@ Backspace 3
 Sleep 500ms
 Type "boot"
 Sleep 1s
-Enter
+Escape
 Sleep 2.5s
-Type "q"
+Type "ctrl+c"
 Sleep 1.5s
 
 Output booky.gif

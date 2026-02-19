@@ -29,7 +29,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.active {
 			switch {
-			case key.Matches(msg, keys.Navigation.SwitchView):
+			case key.Matches(msg, keys.Navigation.SwitchView), key.Matches(msg, localKeys.SwitchView):
 				cmds = append(cmds, switchToBookmarks)
 			default:
 				list, cmd := m.list.Update(msg)

@@ -15,6 +15,8 @@ type Model struct {
 
 func NewModel() Model {
 	list := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	list.Title = "Bookmarks"
+	list.SetShowTitle(true)
 	list.SetShowHelp(false)
 
 	// Disable the default 'q' quit key binding - we handle quit at the app level
